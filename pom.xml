@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.bremersee</groupId>
+    <artifactId>common-parent</artifactId>
+    <version>3.0.0-SNAPSHOT</version>
+    <relativePath/>
+  </parent>
+
+  <artifactId>ldaptive-integration-parent</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <name>Ldaptive Integration Parent Module</name>
+  <description>Ldaptive Integration Project</description>
+  <inceptionYear>2022</inceptionYear>
+  <url>https://github.com/bremersee/ldaptive-integration</url>
+
+  <modules>
+    <module>ldaptive-integration</module>
+    <module>ldaptive-integration-spring-security</module>
+    <module>ldaptive-integration-spring-boot-autoconfigure</module>
+    <module>ldaptive-integration-spring-boot-starter</module>
+  </modules>
+
+  <properties>
+    <github.repo>ldaptive-integration</github.repo>
+    <!--suppress UnresolvedMavenProperty -->
+    <gh-pages-staging-dir>${maven.multiModuleProjectDirectory}/target/staging</gh-pages-staging-dir>
+
+    <common-exception.version>1.0.0-SNAPSHOT</common-exception.version>
+  </properties>
+
+  <developers>
+    <developer>
+      <id>bremersee</id>
+      <name>Christian Bremer</name>
+      <organization>bremersee.org</organization>
+      <organizationUrl>https://bremersee.org</organizationUrl>
+      <email>christian@bremersee.org</email>
+      <timezone>+1</timezone>
+      <roles>
+        <role>Developer</role>
+      </roles>
+    </developer>
+  </developers>
+
+  <organization>
+    <name>bremersee.org</name>
+    <url>https://bremersee.org</url>
+  </organization>
+
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+    </license>
+  </licenses>
+
+  <scm>
+    <url>https://github.com/bremersee/ldaptive-integration</url>
+    <connection>scm:git:git://github.com/bremersee/ldaptive-integration.git</connection>
+    <developerConnection>scm:git:git@github.com:bremersee/ldaptive-integration.git</developerConnection>
+  </scm>
+
+  <issueManagement>
+    <url>https://github.com/bremersee/ldaptive-integration/issues</url>
+    <system>GitHub Issues</system>
+  </issueManagement>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <site>
+      <id>bremersee-sites</id>
+      <url>
+        dav:https://nexus.bremersee.org/repository/maven-sites/ldaptive-integration/${project.version}
+      </url>
+    </site>
+  </distributionManagement>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.bremersee</groupId>
+        <artifactId>common-exception</artifactId>
+        <version>${common-exception.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+</project>
