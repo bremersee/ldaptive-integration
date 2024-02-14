@@ -18,17 +18,19 @@ package org.bremersee.ldaptive.spring.boot.autoconfigure;
 
 import lombok.extern.slf4j.Slf4j;
 import org.bremersee.exception.ServiceException;
+import org.bremersee.ldaptive.LdaptiveConnectionConfigProvider;
+import org.bremersee.ldaptive.LdaptiveConnectionConfigProvider.DefaultLdaptiveConnectionConfigProvider;
+import org.bremersee.ldaptive.LdaptiveConnectionFactoryProvider;
+import org.bremersee.ldaptive.LdaptiveConnectionFactoryProvider.DefaultLdaptiveConnectionFactoryProvider;
 import org.bremersee.ldaptive.LdaptiveOperations;
+import org.bremersee.ldaptive.LdaptiveProperties;
 import org.bremersee.ldaptive.LdaptiveTemplate;
 import org.bremersee.ldaptive.reactive.ReactiveLdaptiveOperations;
 import org.bremersee.ldaptive.reactive.ReactiveLdaptiveTemplate;
+import org.ldaptive.ConnectionConfig;
 import org.ldaptive.ConnectionFactory;
-import org.ldaptive.DefaultConnectionFactory;
-import org.ldaptive.PooledConnectionFactory;
 import org.ldaptive.SearchRequest;
 import org.ldaptive.SearchResponse;
-import org.ldaptive.pool.IdlePruneStrategy;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -36,6 +38,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.event.EventListener;
 import org.springframework.util.ClassUtils;
 
@@ -45,31 +48,24 @@ import org.springframework.util.ClassUtils;
  * @author Christian Bremer
  */
 @AutoConfiguration
-@ConditionalOnClass({
-    ConnectionFactory.class,
-    LdaptiveTemplate.class
+@ConditionalOnClass(name = {
+    "org.ldaptive.ConnectionFactory",
+    "org.bremersee.ldaptive.LdaptiveTemplate"
 })
 @ConditionalOnProperty(prefix = "bremersee.ldaptive", name = "enabled", havingValue = "true")
-@EnableConfigurationProperties(LdaptiveProperties.class)
+@EnableConfigurationProperties(LdaptiveAutoConfigurationProperties.class)
 @Slf4j
 public class LdaptiveAutoConfiguration {
 
   private final LdaptiveProperties properties;
 
-  private final LdaptiveConnectionConfigFactory connectionConfigFactory;
-
   /**
    * Instantiates a new ldaptive configuration.
    *
    * @param ldaptiveProperties the ldaptive properties
-   * @param connectionConfigFactory the connection config factory
    */
-  public LdaptiveAutoConfiguration(
-      LdaptiveProperties ldaptiveProperties,
-      ObjectProvider<LdaptiveConnectionConfigFactory> connectionConfigFactory) {
-    this.properties = ldaptiveProperties;
-    this.connectionConfigFactory = connectionConfigFactory
-        .getIfAvailable(LdaptiveConnectionConfigFactory::defaultFactory);
+  public LdaptiveAutoConfiguration(LdaptiveAutoConfigurationProperties ldaptiveProperties) {
+    this.properties = ldaptiveProperties.getConfig();
   }
 
   /**
@@ -81,17 +77,50 @@ public class LdaptiveAutoConfiguration {
 
             *********************************************************************************
             * {}
-            *********************************************************************************
-            * connectionConfigFactory = {}
             * properties = {}
             *********************************************************************************""",
         ClassUtils.getUserClass(getClass()).getSimpleName(),
-        ClassUtils.getUserClass(connectionConfigFactory).getSimpleName(),
         properties);
+  }
 
+
+  @ConditionalOnMissingBean(LdaptiveConnectionConfigProvider.class)
+  @Bean
+  public LdaptiveConnectionConfigProvider connectionConfigProvider() {
+    return new DefaultLdaptiveConnectionConfigProvider(properties);
+  }
+
+  @ConditionalOnMissingBean(LdaptiveConnectionFactoryProvider.class)
+  @Bean
+  public LdaptiveConnectionFactoryProvider connectionFactoryProvider() {
+    return new DefaultLdaptiveConnectionFactoryProvider(properties);
+  }
+
+  /**
+   * Creates connection factory bean.
+   *
+   * @return the connection factory bean
+   */
+  @ConditionalOnMissingBean(ConnectionFactory.class)
+  @Bean(destroyMethod = "close")
+  public ConnectionFactory connectionFactory(
+      LdaptiveConnectionConfigProvider connectionConfigProvider,
+      LdaptiveConnectionFactoryProvider connectionFactoryProvider) {
+
+    ConnectionConfig connectionConfig = connectionConfigProvider.getConnectionConfig();
     if (properties.isPooled()) {
+      ConnectionFactory factory = connectionFactoryProvider
+          .getDefaultConnectionFactory(connectionConfig);
+      validatePooledConnection(factory);
+      return connectionFactoryProvider.getPooledConnectionFactory(connectionConfig);
+    }
+    return connectionFactoryProvider.getDefaultConnectionFactory(connectionConfig);
+  }
+
+  private void validatePooledConnection(ConnectionFactory factory) {
+    try {
       log.info("Checking validation properties {}", properties.getSearchValidator());
-      LdaptiveTemplate ldaptiveTemplate = new LdaptiveTemplate(defaultConnectionFactory());
+      LdaptiveTemplate ldaptiveTemplate = new LdaptiveTemplate(factory);
       SearchRequest request = properties.getSearchValidator().getSearchRequest()
           .createSearchRequest();
       SearchResponse response = ldaptiveTemplate.search(request);
@@ -103,6 +132,9 @@ public class LdaptiveAutoConfiguration {
         throw se;
       }
       log.info("Checking validation properties: successfully done!");
+
+    } finally {
+      factory.close();
     }
   }
 
@@ -129,41 +161,6 @@ public class LdaptiveAutoConfiguration {
   @Bean
   public ReactiveLdaptiveTemplate reactiveLdaptiveTemplate(ConnectionFactory connectionFactory) {
     return new ReactiveLdaptiveTemplate(connectionFactory);
-  }
-
-  /**
-   * Builds connection factory bean.
-   *
-   * @return the connection factory bean
-   */
-  @ConditionalOnMissingBean(ConnectionFactory.class)
-  @Bean(destroyMethod = "close")
-  public ConnectionFactory connectionFactory() {
-    return properties.isPooled() ? pooledConnectionFactory() : defaultConnectionFactory();
-  }
-
-  private DefaultConnectionFactory defaultConnectionFactory() {
-    return DefaultConnectionFactory.builder()
-        .config(connectionConfigFactory.createConnectionConfig(properties))
-        .build();
-  }
-
-  private PooledConnectionFactory pooledConnectionFactory() {
-    PooledConnectionFactory factory = PooledConnectionFactory.builder()
-        .config(connectionConfigFactory.createConnectionConfig(properties))
-        .blockWaitTime(properties.getBlockWaitTime())
-        .connectOnCreate(properties.isConnectOnCreate())
-        .failFastInitialize(properties.isFailFastInitialize())
-        .max(properties.getMaxPoolSize())
-        .min(properties.getMinPoolSize())
-        .pruneStrategy(new IdlePruneStrategy(properties.getPrunePeriod(), properties.getIdleTime()))
-        .validateOnCheckIn(properties.isValidateOnCheckIn())
-        .validateOnCheckOut(properties.isValidateOnCheckOut())
-        .validatePeriodically(properties.isValidatePeriodically())
-        .validator(properties.createSearchConnectionValidator())
-        .build();
-    factory.initialize();
-    return factory;
   }
 
 }

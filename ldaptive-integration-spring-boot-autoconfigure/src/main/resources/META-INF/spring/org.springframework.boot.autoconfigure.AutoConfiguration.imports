@@ -1,1 +1,2 @@
 org.bremersee.ldaptive.spring.boot.autoconfigure.LdaptiveAutoConfiguration
+org.bremersee.ldaptive.spring.boot.autoconfigure.LdaptiveSecurityAutoConfiguration

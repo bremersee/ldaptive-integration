@@ -1,0 +1,104 @@
+package org.bremersee.ldaptive.spring.boot.autoconfigure;
+
+import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
+import org.bremersee.ldaptive.LdaptiveConnectionConfigProvider;
+import org.bremersee.ldaptive.LdaptiveConnectionFactoryProvider;
+import org.bremersee.ldaptive.security.authentication.AccountControlEvaluator;
+import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationManager;
+import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationProperties;
+import org.bremersee.ldaptive.security.authentication.LdaptivePasswordEncoderProvider;
+import org.bremersee.ldaptive.security.authentication.LdaptivePasswordEncoderProvider.DefaultLdaptivePasswordEncoderProvider;
+import org.bremersee.ldaptive.security.authentication.ReactiveLdaptiveAuthenticationManager;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.event.EventListener;
+import org.springframework.util.ClassUtils;
+
+@AutoConfiguration
+@ConditionalOnClass(name = {
+    "org.ldaptive.ConnectionFactory",
+    "org.bremersee.ldaptive.LdaptiveTemplate",
+    "org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationManager"
+})
+@ConditionalOnBean({
+    LdaptiveConnectionConfigProvider.class,
+    LdaptiveConnectionFactoryProvider.class
+})
+@AutoConfigureAfter({LdaptiveAutoConfiguration.class})
+@EnableConfigurationProperties(LdaptiveAutoConfigurationProperties.class)
+@Slf4j
+public class LdaptiveSecurityAutoConfiguration {
+
+  private final LdaptiveAuthenticationProperties properties;
+
+  public LdaptiveSecurityAutoConfiguration(LdaptiveAutoConfigurationProperties properties) {
+    this.properties = Optional
+        .ofNullable(properties.getAutenticationTemplate())
+        .map(t -> t.applyTemplate(properties.getAuthentication()))
+        .orElse(properties.getAuthentication());
+  }
+
+  /**
+   * Init.
+   */
+  @EventListener(ApplicationReadyEvent.class)
+  public void init() {
+    log.info("""
+
+            *********************************************************************************
+            * {}
+            * properties = {}
+            *********************************************************************************""",
+        ClassUtils.getUserClass(getClass()).getSimpleName(),
+        properties);
+  }
+
+  @ConditionalOnMissingBean(LdaptivePasswordEncoderProvider.class)
+  @Bean
+  public LdaptivePasswordEncoderProvider ldaptivePasswordEncoderProvider() {
+    return new DefaultLdaptivePasswordEncoderProvider();
+  }
+
+  @ConditionalOnWebApplication(type = Type.SERVLET)
+  @Bean
+  public LdaptiveAuthenticationManager ldaptiveAuthenticationManager(
+      LdaptiveConnectionConfigProvider connectionConfigProvider,
+      LdaptiveConnectionFactoryProvider connectionFactoryProvider,
+      LdaptivePasswordEncoderProvider passwordEncoderProvider,
+      ObjectProvider<AccountControlEvaluator> accountControlEvaluatorProvider) {
+
+    LdaptiveAuthenticationManager manager = new LdaptiveAuthenticationManager(
+        connectionConfigProvider, connectionFactoryProvider, properties);
+    manager.setPasswordEncoder(passwordEncoderProvider.getPasswordEncoder());
+    AccountControlEvaluator accountControlEvaluator = accountControlEvaluatorProvider
+        .getIfAvailable(() -> properties.getAccountControlEvaluator().getEvaluator());
+    manager.setAccountControlEvaluator(accountControlEvaluator);
+    return manager;
+  }
+
+  @ConditionalOnWebApplication(type = Type.REACTIVE)
+  @Bean
+  public ReactiveLdaptiveAuthenticationManager reactiveLdaptiveAuthenticationManager(
+      LdaptiveConnectionConfigProvider connectionConfigProvider,
+      LdaptiveConnectionFactoryProvider connectionFactoryProvider,
+      LdaptivePasswordEncoderProvider passwordEncoderProvider,
+      ObjectProvider<AccountControlEvaluator> accountControlEvaluatorProvider) {
+    return new ReactiveLdaptiveAuthenticationManager(
+        ldaptiveAuthenticationManager(
+            connectionConfigProvider,
+            connectionFactoryProvider,
+            passwordEncoderProvider,
+            accountControlEvaluatorProvider));
+  }
+
+}

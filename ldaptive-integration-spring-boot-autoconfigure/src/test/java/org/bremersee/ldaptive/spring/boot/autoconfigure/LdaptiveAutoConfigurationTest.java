@@ -16,13 +16,10 @@
 
 package org.bremersee.ldaptive.spring.boot.autoconfigure;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.ObjectProvider;
 
 /**
  * The ldaptive autoconfiguration test.
@@ -34,22 +31,26 @@ class LdaptiveAutoConfigurationTest {
    */
   @Test
   void init() {
-    LdaptiveProperties properties = new LdaptiveProperties();
-    properties.setPooled(false);
-    LdaptiveAutoConfiguration configuration = buildConfiguration(properties);
-    configuration.init();
+    LdaptiveAutoConfigurationProperties properties = new LdaptiveAutoConfigurationProperties();
+    properties.getConfig().setPooled(false);
+    LdaptiveAutoConfiguration configuration = new LdaptiveAutoConfiguration(properties);
+    assertDoesNotThrow(configuration::init);
   }
 
-  /**
-   * Ldaptive template.
-   */
   @Test
-  void ldaptiveTemplate() {
-    LdaptiveProperties properties = new LdaptiveProperties();
-    properties.setPooled(false);
+  void connectionConfigProvider() {
+    LdaptiveAutoConfigurationProperties properties = new LdaptiveAutoConfigurationProperties();
+    properties.getConfig().setPooled(false);
+    LdaptiveAutoConfiguration configuration = new LdaptiveAutoConfiguration(properties);
+    assertNotNull(configuration.connectionConfigProvider());
+  }
 
-    LdaptiveAutoConfiguration configuration = buildConfiguration(properties);
-    assertNotNull(configuration.ldaptiveTemplate(configuration.connectionFactory()));
+  @Test
+  void connectionFactoryProvider() {
+    LdaptiveAutoConfigurationProperties properties = new LdaptiveAutoConfigurationProperties();
+    properties.getConfig().setPooled(false);
+    LdaptiveAutoConfiguration configuration = new LdaptiveAutoConfiguration(properties);
+    assertNotNull(configuration.connectionFactoryProvider());
   }
 
   /**
@@ -57,22 +58,38 @@ class LdaptiveAutoConfigurationTest {
    */
   @Test
   void connectionFactory() {
-    LdaptiveProperties properties = new LdaptiveProperties();
-    properties.setPooled(false);
+    LdaptiveAutoConfigurationProperties properties = new LdaptiveAutoConfigurationProperties();
+    properties.getConfig().setPooled(false);
 
-    LdaptiveAutoConfiguration configuration = buildConfiguration(properties);
-    assertNotNull(configuration.connectionFactory());
+    LdaptiveAutoConfiguration configuration = new LdaptiveAutoConfiguration(properties);
+    assertNotNull(configuration.connectionFactory(
+        configuration.connectionConfigProvider(),
+        configuration.connectionFactoryProvider()));
   }
 
-  @SuppressWarnings("unchecked")
-  private static LdaptiveAutoConfiguration buildConfiguration(LdaptiveProperties properties) {
-    ObjectProvider<LdaptiveConnectionConfigFactory> connectionConfigFactory
-        = mock(ObjectProvider.class);
-    when(connectionConfigFactory.getIfAvailable(any()))
-        .thenReturn(LdaptiveConnectionConfigFactory.defaultFactory());
+  /**
+   * Ldaptive template.
+   */
+  @Test
+  void ldaptiveTemplate() {
+    LdaptiveAutoConfigurationProperties properties = new LdaptiveAutoConfigurationProperties();
+    properties.getConfig().setPooled(false);
 
-    return new LdaptiveAutoConfiguration(
-        properties,
-        connectionConfigFactory);
+    LdaptiveAutoConfiguration configuration = new LdaptiveAutoConfiguration(properties);
+    assertNotNull(configuration.ldaptiveTemplate(configuration.connectionFactory(
+        configuration.connectionConfigProvider(),
+        configuration.connectionFactoryProvider())));
   }
+
+  @Test
+  void reactiveLdaptiveTemplate() {
+    LdaptiveAutoConfigurationProperties properties = new LdaptiveAutoConfigurationProperties();
+    properties.getConfig().setPooled(false);
+
+    LdaptiveAutoConfiguration configuration = new LdaptiveAutoConfiguration(properties);
+    assertNotNull(configuration.reactiveLdaptiveTemplate(configuration.connectionFactory(
+        configuration.connectionConfigProvider(),
+        configuration.connectionFactoryProvider())));
+  }
+
 }

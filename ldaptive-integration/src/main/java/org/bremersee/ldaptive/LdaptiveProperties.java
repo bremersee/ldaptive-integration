@@ -14,49 +14,34 @@
  * limitations under the License.
  */
 
-package org.bremersee.ldaptive.spring.boot.autoconfigure;
+package org.bremersee.ldaptive;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import org.bremersee.ldaptive.transcoder.UserAccountControlValueTranscoder;
 import org.ldaptive.ReturnAttributes;
 import org.ldaptive.SearchConnectionValidator;
 import org.ldaptive.SearchRequest;
 import org.ldaptive.SearchScope;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.util.StringUtils;
 
 /**
  * The ldap properties.
  *
  * @author Christian Bremer
  */
-@ConfigurationProperties(prefix = "bremersee.ldaptive")
 @Getter
 @Setter
 @ToString(exclude = {"bindCredentials"})
 @EqualsAndHashCode(exclude = {"bindCredentials"})
 @NoArgsConstructor
 public class LdaptiveProperties {
-
-  /**
-   * Specifies whether ldap connection should be configured or not.
-   */
-  private boolean enabled = true;
-
-  /**
-   * Specifies whether a ldap user details service should be configured or not.
-   */
-  private boolean authenticationEnabled = false; // TODO not implemented, move to user details, requires security module
 
   /**
    * URL to the LDAP(s).
@@ -126,6 +111,11 @@ public class LdaptiveProperties {
   private String bindCredentials;
 
   /**
+   * Perform a fast bind, if no credentials are present.
+   */
+  private boolean fastBind = false;
+
+  /**
    * Specifies whether the connection should be pooled or not. Default is {@code false}.
    */
   private boolean pooled = false;
@@ -192,8 +182,6 @@ public class LdaptiveProperties {
    */
   private Duration idleTime = Duration.ofMinutes(10);
 
-  private UserDetailsProperties userDetails = new UserDetailsProperties();
-
   /**
    * Create search connection validator search connection validator.
    *
@@ -209,10 +197,7 @@ public class LdaptiveProperties {
   /**
    * The search validator properties.
    */
-  @Getter
-  @Setter
-  @ToString
-  @EqualsAndHashCode
+  @Data
   @NoArgsConstructor
   public static class SearchValidatorProperties {
 
@@ -221,10 +206,7 @@ public class LdaptiveProperties {
     /**
      * The search request properties.
      */
-    @Getter
-    @Setter
-    @ToString
-    @EqualsAndHashCode
+    @Data
     @NoArgsConstructor
     public static class SearchRequestProperties {
 
@@ -257,8 +239,9 @@ public class LdaptiveProperties {
        */
       public SearchRequest createSearchRequest() {
         SearchRequest searchRequest = new SearchRequest();
-        searchRequest.setBaseDn(StringUtils.hasText(getBaseDn()) ? getBaseDn() : "");
-        if (StringUtils.hasText(getSearchFilter().getFilter())) {
+        searchRequest.setBaseDn(Objects.requireNonNullElse(getBaseDn(), ""));
+        if (Objects.nonNull(getSearchFilter().getFilter())
+            && !getSearchFilter().getFilter().isEmpty()) {
           searchRequest.setFilter(getSearchFilter().getFilter());
         }
         searchRequest.setReturnAttributes(returnAttributesAsArray());
@@ -274,10 +257,7 @@ public class LdaptiveProperties {
       /**
        * The search filter properties.
        */
-      @Getter
-      @Setter
-      @ToString
-      @EqualsAndHashCode
+      @Data
       @NoArgsConstructor
       public static class SearchFilterProperties {
 
@@ -287,57 +267,4 @@ public class LdaptiveProperties {
     }
   }
 
-  /**
-   * The user details properties.
-   */
-  @Getter
-  @Setter
-  @ToString
-  @EqualsAndHashCode
-  @NoArgsConstructor
-  public static class UserDetailsProperties {  // TODO support other strategies, see nexus3
-
-    private String userBaseDn;
-
-    private String userFindOneFilter = "(&(objectClass=user)(sAMAccountName={0}))";
-
-    private SearchScope userFindOneSearchScope = SearchScope.ONELEVEL;
-
-    private String userAccountControlAttributeName = UserAccountControlValueTranscoder.ATTRIBUTE_NAME;
-
-
-    private String authorityAttributeName = "memberOf";
-
-    private boolean authorityDn = true;
-
-    private List<String> authorities = new LinkedList<>(); // default Roles
-
-    private Map<String, String> authorityMap = new LinkedHashMap<>();
-
-    private String authorityPrefix = "ROLE_";
-
-    private String userPasswordAttributeName = "userPassword";
-
-    private String userPasswordLabel = "SHA";
-
-    private String userPasswordAlgorithm = "SHA";
-
-  }
-
-  public static class GroupToRoleMappingProperties {
-
-    private boolean enabled = true;
-
-    private String rolePrefix = "ROLE_";
-
-    private List<String> defaultRoles = new ArrayList<>();
-
-    private GroupToRoleMappingStrategy strategy = GroupToRoleMappingStrategy.USER_CONTAINS_GROUP;
-
-  }
-
-  public enum GroupToRoleMappingStrategy {
-    USER_CONTAINS_GROUP,
-    GROUP_CONTAINS_USER
-  }
 }

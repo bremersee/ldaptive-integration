@@ -20,12 +20,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collection;
 import lombok.extern.slf4j.Slf4j;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.bremersee.ldaptive.LdaptiveTemplate;
+import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationManager;
+import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationToken;
 import org.bremersee.ldaptive.spring.boot.autoconfigure.app.GroupMapper;
 import org.bremersee.ldaptive.spring.boot.autoconfigure.app.PersonMapper;
 import org.bremersee.ldaptive.spring.boot.autoconfigure.app.TestConfiguration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.ldaptive.LdapEntry;
 import org.ldaptive.SearchRequest;
 import org.ldaptive.SearchScope;
@@ -33,6 +38,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.util.TestSocketUtils;
 
 /**
@@ -42,7 +49,7 @@ import org.springframework.test.util.TestSocketUtils;
  */
 @SpringBootTest(
     classes = TestConfiguration.class,
-    webEnvironment = WebEnvironment.NONE,
+    webEnvironment = WebEnvironment.RANDOM_PORT,
     properties = {
         "spring.application.name=ldaptive-test",
         "spring.ldap.embedded.base-dn=dc=bremersee,dc=org",
@@ -51,16 +58,20 @@ import org.springframework.test.util.TestSocketUtils;
         "spring.ldap.embedded.ldif=classpath:schema.ldif",
         "spring.ldap.embedded.validation.enabled=false",
         "bremersee.ldaptive.enabled=true",
-        "bremersee.ldaptive.ldap-url=ldap://localhost:${spring.ldap.embedded.port}",
-        "bremersee.ldaptive.use-start-tls=false",
-        "bremersee.ldaptive.bind-dn=uid=admin",
-        "bremersee.ldaptive.bind-credentials=secret",
-        "bremersee.ldaptive.pooled=false",
-        "bremersee.ldaptive.search-validator.search-request.base-dn=ou=people,dc=bremersee,dc=org",
-        "bremersee.ldaptive.search-validator.search-request.search-filter.filter=uid=anna",
-        "bremersee.ldaptive.search-validator.search-request.size-limit=1",
-        "bremersee.ldaptive.search-validator.search-request.search-scope=ONELEVEL",
+        "bremersee.ldaptive.config.ldap-url=ldap://localhost:${spring.ldap.embedded.port}",
+        "bremersee.ldaptive.config.use-start-tls=false",
+        "bremersee.ldaptive.config.bind-dn=uid=admin",
+        "bremersee.ldaptive.config.bind-credentials=secret",
+        "bremersee.ldaptive.config.pooled=false",
+        "bremersee.ldaptive.config.search-validator.search-request.base-dn=ou=people,dc=bremersee,dc=org",
+        "bremersee.ldaptive.config.search-validator.search-request.search-filter.filter=uid=anna",
+        "bremersee.ldaptive.config.search-validator.search-request.size-limit=1",
+        "bremersee.ldaptive.config.search-validator.search-request.search-scope=ONELEVEL",
+        "bremersee.ldaptive.autentication-template=open_ldap",
+        "bremersee.ldaptive.authentication.user-base-dn=ou=people,dc=bremersee,dc=org",
+        "bremersee.ldaptive.authentication.password-attribute=",
     })
+@ExtendWith({SoftAssertionsExtension.class})
 @Slf4j
 class LdaptiveIntegrationTest {
 
@@ -70,6 +81,9 @@ class LdaptiveIntegrationTest {
   @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
   @Autowired
   private LdaptiveTemplate ldaptiveTemplate;
+
+  @Autowired
+  private LdaptiveAuthenticationManager authenticationManager;
 
   @Autowired
   private GroupMapper groupMapper;
@@ -152,6 +166,30 @@ class LdaptiveIntegrationTest {
     assertTrue(ldaptiveTemplate.findAll(searchRequest, groupMapper)
         .anyMatch(entry -> "managers"
             .equalsIgnoreCase(entry.getCn())));
+  }
+
+  @Test
+  void authenticate(SoftAssertions softly) {
+
+    // no password present: authentication fails
+    softly
+        .assertThatExceptionOfType(BadCredentialsException.class)
+        .isThrownBy(() -> authenticationManager
+            .authenticate(new UsernamePasswordAuthenticationToken("anna", "secret")));
+
+    // set password
+    String password = ldaptiveTemplate.generateUserPassword("uid=anna,ou=people," + baseDn);
+
+    // authenticate successfully
+    LdaptiveAuthenticationToken authenticationToken = authenticationManager
+        .authenticate(new UsernamePasswordAuthenticationToken("anna", password));
+
+    softly
+        .assertThat(authenticationToken.getName())
+        .isEqualTo("anna");
+    softly
+        .assertThat(authenticationToken.isAuthenticated())
+        .isTrue();
   }
 
 }

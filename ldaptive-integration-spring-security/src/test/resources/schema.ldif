@@ -25,7 +25,7 @@ cn: Anna Livia Plurabelle
 sn: Plurabelle
 uid: anna
 memberOf: cn=developers,ou=groups,dc=bremersee,dc=org
-memberOf: cn=managers,ou=groups,dc=bremersee,dc=org
+memberOf: cn=super users,ou=groups,dc=bremersee,dc=org
 
 # Create Groups
 dn: cn=developers,ou=groups,dc=bremersee,dc=org
@@ -35,7 +35,7 @@ cn: developers
 ou: developer
 uniqueMember: uid=anna,ou=people,dc=bremersee,dc=org
 
-dn: cn=managers,ou=groups,dc=bremersee,dc=org
+dn: cn=super users,ou=groups,dc=bremersee,dc=org
 objectclass: top
 objectclass: groupOfUniqueNames
 cn: managers
