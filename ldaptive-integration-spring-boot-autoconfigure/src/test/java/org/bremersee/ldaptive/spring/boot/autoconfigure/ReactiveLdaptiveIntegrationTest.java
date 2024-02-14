@@ -64,12 +64,18 @@ import reactor.test.StepVerifier;
         "bremersee.ldaptive.config.bind-dn=uid=admin",
         "bremersee.ldaptive.config.bind-credentials=secret",
         "bremersee.ldaptive.config.pooled=false",
-        "bremersee.ldaptive.autentication-template=open_ldap",
+        "bremersee.ldaptive.autentication-template=group_contains_users",
         "bremersee.ldaptive.authentication.user-base-dn=ou=people,dc=bremersee,dc=org",
+        "bremersee.ldaptive.authentication.user-object-class=inetOrgPerson",
+        "bremersee.ldaptive.authentication.user-uid-attribute=uid",
+        "bremersee.ldaptive.authentication.real-name-attribute=uid",
+        "bremersee.ldaptive.authentication.member-attribute=memberOf",
         "bremersee.ldaptive.authentication.password-attribute=",
         "bremersee.ldaptive.authentication.group-fetch-strategy=group_contains_users",
         "bremersee.ldaptive.authentication.group-base-dn=ou=groups,dc=bremersee,dc=org",
         "bremersee.ldaptive.authentication.group-object-class=groupOfUniqueNames",
+        "bremersee.ldaptive.authentication.group-id-attribute=cn",
+        "bremersee.ldaptive.authentication.group-member-attribute=uniqueMember",
     })
 @ExtendWith({SoftAssertionsExtension.class})
 @Slf4j

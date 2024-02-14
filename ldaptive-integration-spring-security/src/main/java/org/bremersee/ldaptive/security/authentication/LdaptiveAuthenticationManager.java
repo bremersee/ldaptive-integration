@@ -1,3 +1,19 @@
+/*
+ * Copyright 2014 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.bremersee.ldaptive.security.authentication;
 
 import static java.util.Objects.isNull;
@@ -39,11 +55,22 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.Assert;
 
+/**
+ * The type Ldaptive authentication manager.
+ *
+ * @author Christian Bremer
+ */
 public class LdaptiveAuthenticationManager
     implements AuthenticationManager, AuthenticationProvider { // message source aware
 
+  /**
+   * The constant USERNAME_PLACEHOLDER.
+   */
   protected static final String USERNAME_PLACEHOLDER = "${username}";
 
+  /**
+   * The constant STRING_TRANSCODER.
+   */
   protected static final StringValueTranscoder STRING_TRANSCODER = new StringValueTranscoder();
 
   private final LdaptiveConnectionConfigProvider connectionConfigProvider;
@@ -57,6 +84,13 @@ public class LdaptiveAuthenticationManager
 
   private AccountControlEvaluator accountControlEvaluator = new NoAccountControlEvaluator();
 
+  /**
+   * Instantiates a new Ldaptive authentication manager.
+   *
+   * @param connectionConfigProvider the connection config provider
+   * @param connectionFactoryProvider the connection factory provider
+   * @param authenticationProperties the authentication properties
+   */
   public LdaptiveAuthenticationManager(LdaptiveConnectionConfigProvider connectionConfigProvider,
       LdaptiveConnectionFactoryProvider connectionFactoryProvider,
       LdaptiveAuthenticationProperties authenticationProperties) {
@@ -65,6 +99,11 @@ public class LdaptiveAuthenticationManager
     this.authenticationProperties = authenticationProperties;
   }
 
+  /**
+   * Sets account control evaluator.
+   *
+   * @param accountControlEvaluator the account control evaluator
+   */
   public void setAccountControlEvaluator(
       AccountControlEvaluator accountControlEvaluator) {
     if (nonNull(accountControlEvaluator)) {
@@ -122,6 +161,14 @@ public class LdaptiveAuthenticationManager
     return connectionFactoryProvider.getDefaultConnectionFactory(connectionConfig);
   }
 
+  /**
+   * Gets user.
+   *
+   * @param ldaptiveTemplate the ldaptive template
+   * @param username the username
+   * @return the user
+   * @throws UsernameNotFoundException the username not found exception
+   */
   protected LdapEntry getUser(LdaptiveTemplate ldaptiveTemplate, String username)
       throws UsernameNotFoundException {
 
@@ -161,6 +208,13 @@ public class LdaptiveAuthenticationManager
     return exception;
   }
 
+  /**
+   * Check password.
+   *
+   * @param ldaptiveTemplate the ldaptive template
+   * @param user the user
+   * @param password the password
+   */
   protected void checkPassword(
       LdaptiveTemplate ldaptiveTemplate,
       LdapEntry user,
@@ -180,6 +234,11 @@ public class LdaptiveAuthenticationManager
     }
   }
 
+  /**
+   * Check account control.
+   *
+   * @param user the user
+   */
   protected void checkAccountControl(LdapEntry user) {
     if (!accountControlEvaluator.isEnabled(user)) {
       throw new DisabledException("Account is disabled.");
@@ -195,6 +254,13 @@ public class LdaptiveAuthenticationManager
     }
   }
 
+  /**
+   * Gets all roles.
+   *
+   * @param ldaptiveTemplate the ldaptive template
+   * @param user the user
+   * @return the all roles
+   */
   protected Collection<? extends GrantedAuthority> getAllRoles(
       LdaptiveTemplate ldaptiveTemplate, LdapEntry user) {
     Stream<? extends GrantedAuthority> defaultRoles = Stream
@@ -207,6 +273,13 @@ public class LdaptiveAuthenticationManager
         .toList();
   }
 
+  /**
+   * Gets roles.
+   *
+   * @param ldaptiveTemplate the ldaptive template
+   * @param user the user
+   * @return the roles
+   */
   protected Stream<? extends GrantedAuthority> getRoles(
       LdaptiveTemplate ldaptiveTemplate, LdapEntry user) {
 
@@ -219,6 +292,12 @@ public class LdaptiveAuthenticationManager
     };
   }
 
+  /**
+   * Gets roles by groups in user.
+   *
+   * @param user the user
+   * @return the roles by groups in user
+   */
   protected Stream<? extends GrantedAuthority> getRolesByGroupsInUser(LdapEntry user) {
     return LdaptiveEntryMapper.getAttributeValues(
             user, authenticationProperties.getMemberAttribute(), STRING_TRANSCODER)
@@ -227,6 +306,13 @@ public class LdaptiveAuthenticationManager
         .map(this::toGrantedAuthority);
   }
 
+  /**
+   * Gets roles by groups with user.
+   *
+   * @param ldaptiveTemplate the ldaptive template
+   * @param user the user
+   * @return the roles by groups with user
+   */
   protected Stream<? extends GrantedAuthority> getRolesByGroupsWithUser(
       LdaptiveTemplate ldaptiveTemplate, LdapEntry user) {
     return ldaptiveTemplate
@@ -243,6 +329,12 @@ public class LdaptiveAuthenticationManager
         .map(this::toGrantedAuthority);
   }
 
+  /**
+   * Gets group filter.
+   *
+   * @param user the user
+   * @return the group filter
+   */
   protected String getGroupFilter(LdapEntry user) {
     String groupObjectClass = authenticationProperties.getGroupObjectClass();
     String groupMemberAttribute = authenticationProperties.getGroupMemberAttribute();
@@ -259,6 +351,12 @@ public class LdaptiveAuthenticationManager
         groupObjectClass, groupMemberAttribute, groupMemberValue);
   }
 
+  /**
+   * Gets group name.
+   *
+   * @param group the group
+   * @return the group name
+   */
   protected String getGroupName(LdapEntry group) {
     String groupIdAttribute = authenticationProperties.getGroupIdAttribute();
     String fallback = LdaptiveEntryMapper.getRdn(group.getDn());
@@ -269,16 +367,34 @@ public class LdaptiveAuthenticationManager
         .getAttributeValue(group, groupIdAttribute, STRING_TRANSCODER, fallback);
   }
 
+  /**
+   * To granted authority granted authority.
+   *
+   * @param role the role
+   * @return the granted authority
+   */
   protected GrantedAuthority toGrantedAuthority(String role) {
     return new SimpleGrantedAuthority(mapRole(role));
   }
 
+  /**
+   * Map role string.
+   *
+   * @param role the role
+   * @return the string
+   */
   protected String mapRole(String role) {
     return Optional.ofNullable(authenticationProperties.getGroupToRoleMapping())
         .flatMap(mapping -> Optional.ofNullable(mapping.get(role)))
         .orElse(normalizeRole(role));
   }
 
+  /**
+   * Normalize role string.
+   *
+   * @param roleName the role name
+   * @return the string
+   */
   protected String normalizeRole(String roleName) {
     String normalizedRoleName = roleName;
     if (!isEmpty(authenticationProperties.getRoleSpaceReplacement())) {
@@ -297,6 +413,12 @@ public class LdaptiveAuthenticationManager
     return prefix + normalizedRoleName;
   }
 
+  /**
+   * Gets username.
+   *
+   * @param user the user
+   * @return the username
+   */
   protected String getUsername(LdapEntry user) {
     return LdaptiveEntryMapper.getAttributeValue(
         user, authenticationProperties.getUserUidAttribute(), STRING_TRANSCODER, null);

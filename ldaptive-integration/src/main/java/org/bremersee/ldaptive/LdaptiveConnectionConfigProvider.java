@@ -1,3 +1,19 @@
+/*
+ * Copyright 2024 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.bremersee.ldaptive;
 
 import java.util.Objects;
@@ -13,16 +29,41 @@ import org.ldaptive.ssl.CredentialConfig;
 import org.ldaptive.ssl.SslConfig;
 import org.ldaptive.ssl.X509CredentialConfig;
 
+/**
+ * The interface Ldaptive connection config provider.
+ *
+ * @author Christian Bremer
+ */
 public interface LdaptiveConnectionConfigProvider {
 
+  /**
+   * Gets connection config.
+   *
+   * @return the connection config
+   */
   ConnectionConfig getConnectionConfig();
 
+  /**
+   * Gets connection config.
+   *
+   * @param bindDn the bind dn
+   * @param bindCredentials the bind credentials
+   * @return the connection config
+   */
   ConnectionConfig getConnectionConfig(String bindDn, String bindCredentials);
 
+  /**
+   * The type Default ldaptive connection config provider.
+   */
   class DefaultLdaptiveConnectionConfigProvider implements LdaptiveConnectionConfigProvider {
 
     private final LdaptiveProperties properties;
 
+    /**
+     * Instantiates a new Default ldaptive connection config provider.
+     *
+     * @param properties the properties
+     */
     public DefaultLdaptiveConnectionConfigProvider(LdaptiveProperties properties) {
       this.properties = properties;
     }
