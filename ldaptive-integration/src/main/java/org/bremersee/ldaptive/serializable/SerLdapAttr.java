@@ -23,9 +23,9 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 import org.ldaptive.LdapAttribute;
@@ -37,9 +37,7 @@ import org.ldaptive.LdapUtils;
  *
  * @author Christian Bremer
  */
-@Getter
 @ToString(onlyExplicitlyIncluded = true)
-@EqualsAndHashCode
 public class SerLdapAttr implements Serializable {
 
   @Serial
@@ -49,6 +47,7 @@ public class SerLdapAttr implements Serializable {
    * Attribute name.
    */
   @ToString.Include
+  @Getter
   private final String attributeName;
 
   /**
@@ -60,6 +59,7 @@ public class SerLdapAttr implements Serializable {
    * Whether this attribute is binary and string representations should be base64 encoded.
    */
   @ToString.Include
+  @Getter
   private final boolean binary;
 
   /**
@@ -71,6 +71,31 @@ public class SerLdapAttr implements Serializable {
     this.attributeName = ldapAttribute.getName();
     this.attributeValues = ldapAttribute.getBinaryValues();
     this.binary = ldapAttribute.isBinary();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    SerLdapAttr that = (SerLdapAttr) o;
+    return binary == that.binary
+        && Objects.equals(attributeName.toLowerCase(), that.attributeName.toLowerCase())
+        && attributeValues.size() == that.attributeValues.size()
+        && attributeValues.stream().allMatch(that::hasValue);
+  }
+
+  @Override
+  public int hashCode() {
+    int hash = 10223;
+    int index = 1;
+    for (byte[] b : attributeValues) {
+      hash = (hash * 113 + Arrays.hashCode(b)) + index++;
+    }
+    return hash * 113 + Objects.hash(attributeName, binary);
   }
 
   /**
@@ -112,6 +137,25 @@ public class SerLdapAttr implements Serializable {
           return LdapUtils.utf8Encode(v, false);
         })
         .toList();
+  }
+
+  /**
+   * Returns a single byte array value of this attribute.
+   *
+   * @return single byte array attribute value or null if this attribute is empty
+   */
+  public byte[] getBinaryValue() {
+    return attributeValues.isEmpty() ? null : attributeValues.iterator().next();
+  }
+
+
+  /**
+   * Returns the values of this attribute as byte arrays. The return collection cannot be modified.
+   *
+   * @return collection of string attribute values
+   */
+  public Collection<byte[]> getBinaryValues() {
+    return attributeValues.stream().toList();
   }
 
   /**

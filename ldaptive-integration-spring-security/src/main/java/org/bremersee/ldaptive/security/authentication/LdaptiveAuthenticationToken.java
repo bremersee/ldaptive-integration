@@ -24,9 +24,10 @@ import org.bremersee.ldaptive.serializable.SerLdapAttr;
 import org.ldaptive.LdapEntry;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.util.Assert;
 
 /**
- * The type Ldaptive authentication token.
+ * The ldaptive authentication token.
  *
  * @author Christian Bremer
  */
@@ -60,6 +61,8 @@ public class LdaptiveAuthenticationToken extends AbstractAuthenticationToken {
       String emailAttribute,
       Collection<? extends GrantedAuthority> authorities) {
     super(authorities);
+    Assert.notNull(user, "Ldap entry of user must be present.");
+    Assert.notNull(username, "Username must be present.");
     this.ldapEntry = SerLdapAttr.toMap(user);
     this.username = username;
     this.realNameAttribute = realNameAttribute;
@@ -81,10 +84,10 @@ public class LdaptiveAuthenticationToken extends AbstractAuthenticationToken {
    *
    * @return the real name
    */
-  public String getRealName() {
-    return Optional.ofNullable(ldapEntry.get(realNameAttribute))
-        .map(SerLdapAttr::getStringValue)
-        .orElse(null);
+  public Optional<String> getRealName() {
+    return Optional.ofNullable(realNameAttribute)
+        .flatMap(attrName -> Optional.ofNullable(ldapEntry.get(attrName)))
+        .map(SerLdapAttr::getStringValue);
   }
 
   /**
@@ -92,10 +95,10 @@ public class LdaptiveAuthenticationToken extends AbstractAuthenticationToken {
    *
    * @return the email
    */
-  public String getEmail() {
-    return Optional.ofNullable(ldapEntry.get(emailAttribute))
-        .map(SerLdapAttr::getStringValue)
-        .orElse(null);
+  public Optional<String> getEmail() {
+    return Optional.ofNullable(emailAttribute)
+        .flatMap(attrName -> Optional.ofNullable(ldapEntry.get(attrName)))
+        .map(SerLdapAttr::getStringValue);
   }
 
   @Override
