@@ -75,10 +75,6 @@ import org.springframework.web.reactive.function.client.WebClient;
         "bremersee.ldaptive.config.bind-dn=uid=admin",
         "bremersee.ldaptive.config.bind-credentials=secret",
         "bremersee.ldaptive.config.pooled=false",
-        "bremersee.ldaptive.config.search-validator.search-request.base-dn=ou=people,dc=bremersee,dc=org",
-        "bremersee.ldaptive.config.search-validator.search-request.search-filter.filter=uid=anna",
-        "bremersee.ldaptive.config.search-validator.search-request.size-limit=1",
-        "bremersee.ldaptive.config.search-validator.search-request.search-scope=ONELEVEL",
         "bremersee.ldaptive.autentication-template=open_ldap",
         "bremersee.ldaptive.authentication.user-base-dn=ou=people,dc=bremersee,dc=org",
         "bremersee.ldaptive.authentication.password-attribute=",
@@ -233,7 +229,7 @@ class LdaptiveIntegrationTest {
         .filter(ExchangeFilterFunctions.basicAuthentication("hans", password))
         .build()
         .get()
-        .uri("hello")
+        .uri("/hello")
         .exchangeToMono(res -> res.bodyToMono(String.class))
         .block();
     softly
