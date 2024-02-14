@@ -16,16 +16,12 @@
 
 package org.bremersee.ldaptive.security.authentication;
 
-import static java.util.Objects.isNull;
-
 import java.io.Serial;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
-import org.bremersee.ldaptive.LdaptiveEntryMapper;
+import java.util.Map;
+import java.util.Optional;
+import org.bremersee.ldaptive.serializable.SerLdapAttr;
 import org.ldaptive.LdapEntry;
-import org.ldaptive.transcode.StringValueTranscoder;
-import org.ldaptive.transcode.ValueTranscoder;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 
@@ -37,11 +33,9 @@ import org.springframework.security.core.GrantedAuthority;
 public class LdaptiveAuthenticationToken extends AbstractAuthenticationToken {
 
   @Serial
-  private static final long serialVersionUID = 2L;
+  private static final long serialVersionUID = 1L;
 
-  private static final StringValueTranscoder STRING_TRANSCODER = new StringValueTranscoder();
-
-  private final transient LdapEntry user;
+  private final Map<String, SerLdapAttr> ldapEntry;
 
   private final String username;
 
@@ -66,15 +60,15 @@ public class LdaptiveAuthenticationToken extends AbstractAuthenticationToken {
       String emailAttribute,
       Collection<? extends GrantedAuthority> authorities) {
     super(authorities);
-    this.user = user;
+    this.ldapEntry = SerLdapAttr.toMap(user);
     this.username = username;
     this.realNameAttribute = realNameAttribute;
     this.emailAttribute = emailAttribute;
   }
 
   @Override
-  public LdapEntry getPrincipal() {
-    return user;
+  public Map<String, SerLdapAttr> getPrincipal() {
+    return ldapEntry;
   }
 
   @Override
@@ -83,24 +77,14 @@ public class LdaptiveAuthenticationToken extends AbstractAuthenticationToken {
   }
 
   /**
-   * Gets attribute names.
-   *
-   * @return the attribute names
-   */
-  public List<String> getAttributeNames() {
-    if (isNull(user)) {
-      return List.of();
-    }
-    return Arrays.stream(user.getAttributeNames()).toList();
-  }
-
-  /**
    * Gets real name.
    *
    * @return the real name
    */
   public String getRealName() {
-    return getAttributeValue(realNameAttribute, STRING_TRANSCODER);
+    return Optional.ofNullable(ldapEntry.get(realNameAttribute))
+        .map(SerLdapAttr::getStringValue)
+        .orElse(null);
   }
 
   /**
@@ -109,44 +93,9 @@ public class LdaptiveAuthenticationToken extends AbstractAuthenticationToken {
    * @return the email
    */
   public String getEmail() {
-    return getAttributeValues(emailAttribute, STRING_TRANSCODER)
-        .stream()
-        .findFirst()
+    return Optional.ofNullable(ldapEntry.get(emailAttribute))
+        .map(SerLdapAttr::getStringValue)
         .orElse(null);
-  }
-
-  /**
-   * Gets attribute value.
-   *
-   * @param <T> the type parameter
-   * @param name the name; required
-   * @param valueTranscoder the value transcoder; required
-   * @return the attribute value
-   */
-  public <T> T getAttributeValue(
-      String name,
-      ValueTranscoder<T> valueTranscoder) {
-    if (isNull(user)) {
-      return null;
-    }
-    return LdaptiveEntryMapper.getAttributeValue(user, name, valueTranscoder, null);
-  }
-
-  /**
-   * Gets attribute values.
-   *
-   * @param <T> the type parameter
-   * @param name the name; required
-   * @param valueTranscoder the value transcoder; required
-   * @return the attribute values
-   */
-  public <T> Collection<T> getAttributeValues(
-      String name,
-      ValueTranscoder<T> valueTranscoder) {
-    if (isNull(user)) {
-      return List.of();
-    }
-    return LdaptiveEntryMapper.getAttributeValues(user, name, valueTranscoder);
   }
 
   @Override
