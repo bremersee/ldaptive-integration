@@ -48,7 +48,7 @@ import reactor.test.StepVerifier;
  * @author Christian Bremer
  */
 @SpringBootTest(
-    classes = TestConfiguration.class,
+    classes = {TestConfiguration.class},
     webEnvironment = WebEnvironment.RANDOM_PORT,
     properties = {
         "spring.main.web-application-type=reactive",

@@ -29,6 +29,7 @@ import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationToke
 import org.bremersee.ldaptive.spring.boot.autoconfigure.app.GroupMapper;
 import org.bremersee.ldaptive.spring.boot.autoconfigure.app.PersonMapper;
 import org.bremersee.ldaptive.spring.boot.autoconfigure.app.TestConfiguration;
+import org.bremersee.ldaptive.spring.boot.autoconfigure.security.WebSecurityConfiguration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,11 +40,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.util.TestSocketUtils;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunctions;
+import org.springframework.web.reactive.function.client.WebClient;
 
 /**
  * The ldaptive integration test.
@@ -51,7 +59,7 @@ import org.springframework.test.util.TestSocketUtils;
  * @author Christian Bremer
  */
 @SpringBootTest(
-    classes = TestConfiguration.class,
+    classes = {TestConfiguration.class, WebSecurityConfiguration.class},
     webEnvironment = WebEnvironment.RANDOM_PORT,
     properties = {
         "spring.main.web-application-type=servlet",
@@ -74,6 +82,8 @@ import org.springframework.test.util.TestSocketUtils;
         "bremersee.ldaptive.autentication-template=open_ldap",
         "bremersee.ldaptive.authentication.user-base-dn=ou=people,dc=bremersee,dc=org",
         "bremersee.ldaptive.authentication.password-attribute=",
+        "bremersee.ldaptive.authentication.role-case-transformation=to_upper_case",
+        "bremersee.ldaptive.authentication.role-prefix=ROLE_",
     })
 @ExtendWith({SoftAssertionsExtension.class})
 @Slf4j
@@ -94,6 +104,9 @@ class LdaptiveIntegrationTest {
 
   @Autowired
   private PersonMapper personMapper;
+
+  @LocalServerPort
+  private int port;
 
   /**
    * Sets embedded ldap port.
@@ -195,11 +208,37 @@ class LdaptiveIntegrationTest {
         .assertThat(authenticationToken.isAuthenticated())
         .isTrue();
     List<? extends GrantedAuthority> expectedRoles = List.of(
-        new SimpleGrantedAuthority("developers"),
-        new SimpleGrantedAuthority("managers"));
+        new SimpleGrantedAuthority("ROLE_DEVELOPERS"),
+        new SimpleGrantedAuthority("ROLE_MANAGERS"));
     softly
         .assertThat(authenticationToken.getAuthorities())
         .containsExactlyInAnyOrderElementsOf(expectedRoles);
+  }
+
+  @Test
+  void sayHelloEndpoint(SoftAssertions softly) {
+    softly
+        .assertThatExceptionOfType(HttpClientErrorException.class)
+        .isThrownBy(() -> new RestTemplate()
+            .getForObject("http://localhost:" + port + "/hello", String.class))
+        .extracting(RestClientResponseException::getStatusCode)
+        .isEqualTo(HttpStatus.UNAUTHORIZED);
+
+    // set password
+    String password = ldaptiveTemplate.generateUserPassword("uid=hans,ou=people," + baseDn);
+
+    // get again
+    String helloResponse = WebClient.builder()
+        .baseUrl("http://localhost:" + port)
+        .filter(ExchangeFilterFunctions.basicAuthentication("hans", password))
+        .build()
+        .get()
+        .uri("hello")
+        .exchangeToMono(res -> res.bodyToMono(String.class))
+        .block();
+    softly
+        .assertThat(helloResponse)
+        .isEqualTo("Hello!");
   }
 
 }
