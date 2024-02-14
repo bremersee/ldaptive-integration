@@ -18,32 +18,29 @@ package org.bremersee.ldaptive.spring.boot.autoconfigure;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.bremersee.ldaptive.LdaptiveTemplate;
-import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationManager;
-import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationToken;
-import org.bremersee.ldaptive.spring.boot.autoconfigure.app.GroupMapper;
+import org.bremersee.ldaptive.reactive.ReactiveLdaptiveTemplate;
+import org.bremersee.ldaptive.security.authentication.ReactiveLdaptiveAuthenticationManager;
 import org.bremersee.ldaptive.spring.boot.autoconfigure.app.PersonMapper;
 import org.bremersee.ldaptive.spring.boot.autoconfigure.app.TestConfiguration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.ldaptive.LdapEntry;
 import org.ldaptive.SearchRequest;
 import org.ldaptive.SearchScope;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.util.TestSocketUtils;
+import reactor.test.StepVerifier;
 
 /**
  * The ldaptive integration test.
@@ -54,7 +51,7 @@ import org.springframework.test.util.TestSocketUtils;
     classes = TestConfiguration.class,
     webEnvironment = WebEnvironment.RANDOM_PORT,
     properties = {
-        "spring.main.web-application-type=servlet",
+        "spring.main.web-application-type=reactive",
         "spring.application.name=ldaptive-test",
         "spring.ldap.embedded.base-dn=dc=bremersee,dc=org",
         "spring.ldap.embedded.credential.username=uid=admin",
@@ -74,23 +71,23 @@ import org.springframework.test.util.TestSocketUtils;
         "bremersee.ldaptive.autentication-template=open_ldap",
         "bremersee.ldaptive.authentication.user-base-dn=ou=people,dc=bremersee,dc=org",
         "bremersee.ldaptive.authentication.password-attribute=",
+        "bremersee.ldaptive.authentication.group-fetch-strategy=group_contains_users",
+        "bremersee.ldaptive.authentication.group-base-dn=ou=groups,dc=bremersee,dc=org",
+        "bremersee.ldaptive.authentication.group-object-class=groupOfUniqueNames",
     })
 @ExtendWith({SoftAssertionsExtension.class})
 @Slf4j
-class LdaptiveIntegrationTest {
+class ReactiveLdaptiveIntegrationTest {
 
   @Value("${spring.ldap.embedded.base-dn}")
   private String baseDn;
 
   @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
   @Autowired
-  private LdaptiveTemplate ldaptiveTemplate;
+  private ReactiveLdaptiveTemplate ldaptiveTemplate;
 
   @Autowired
-  private LdaptiveAuthenticationManager authenticationManager;
-
-  @Autowired
-  private GroupMapper groupMapper;
+  private ReactiveLdaptiveAuthenticationManager authenticationManager;
 
   @Autowired
   private PersonMapper personMapper;
@@ -115,91 +112,50 @@ class LdaptiveIntegrationTest {
         .scope(SearchScope.ONELEVEL)
         .build();
 
+    Set<String> names = Set.of("anna", "gustav", "hans");
     // without mapper
-    Collection<LdapEntry> entries = ldaptiveTemplate.findAll(searchRequest);
-    entries.forEach(ldapEntry -> log.info("Ldap entry found with cn = {}",
-        ldapEntry.getAttribute("cn").getStringValue()));
-    assertTrue(entries.stream()
-        .anyMatch(entry -> "Anna Livia Plurabelle"
-            .equalsIgnoreCase(entry.getAttribute("cn").getStringValue())));
-    assertTrue(entries.stream()
-        .anyMatch(entry -> "Gustav Anias Horn"
-            .equalsIgnoreCase(entry.getAttribute("cn").getStringValue())));
-    assertTrue(entries.stream()
-        .anyMatch(entry -> "Hans Castorp"
-            .equalsIgnoreCase(entry.getAttribute("cn").getStringValue())));
+    StepVerifier.create(ldaptiveTemplate.findAll(searchRequest))
+        .assertNext(
+            ldapEntry -> assertTrue(names.contains(ldapEntry.getAttribute("uid").getStringValue())))
+        .assertNext(
+            ldapEntry -> assertTrue(names.contains(ldapEntry.getAttribute("uid").getStringValue())))
+        .assertNext(
+            ldapEntry -> assertTrue(names.contains(ldapEntry.getAttribute("uid").getStringValue())))
+        .verifyComplete();
 
     // with mapper
-    assertTrue(ldaptiveTemplate.findAll(searchRequest, personMapper)
-        .anyMatch(entry -> "Anna Livia Plurabelle"
-            .equalsIgnoreCase(entry.getCn())));
-    assertTrue(ldaptiveTemplate.findAll(searchRequest, personMapper)
-        .anyMatch(entry -> "Gustav Anias Horn"
-            .equalsIgnoreCase(entry.getCn())));
-    assertTrue(ldaptiveTemplate.findAll(searchRequest, personMapper)
-        .anyMatch(entry -> "Hans Castorp"
-            .equalsIgnoreCase(entry.getCn())));
-  }
-
-  /**
-   * Find existing groups.
-   */
-  @Test
-  void findExistingGroups() {
-    SearchRequest searchRequest = SearchRequest.builder()
-        .dn("ou=groups," + baseDn)
-        .filter("(objectclass=groupOfUniqueNames)")
-        .scope(SearchScope.ONELEVEL)
-        .build();
-
-    // without mapper
-    Collection<LdapEntry> entries = ldaptiveTemplate.findAll(searchRequest);
-    entries.forEach(ldapEntry -> log.info("Ldap entry found with cn = {}",
-        ldapEntry.getAttribute("cn").getStringValue()));
-    assertTrue(entries.stream()
-        .anyMatch(entry -> "developers"
-            .equalsIgnoreCase(entry.getAttribute("cn").getStringValue())));
-    assertTrue(entries.stream()
-        .anyMatch(entry -> "managers"
-            .equalsIgnoreCase(entry.getAttribute("cn").getStringValue())));
-
-    // with mapper
-    assertTrue(ldaptiveTemplate.findAll(searchRequest, groupMapper)
-        .anyMatch(entry -> "developers"
-            .equalsIgnoreCase(entry.getCn())));
-    assertTrue(ldaptiveTemplate.findAll(searchRequest, groupMapper)
-        .anyMatch(entry -> "managers"
-            .equalsIgnoreCase(entry.getCn())));
+    StepVerifier.create(ldaptiveTemplate.findAll(searchRequest, personMapper))
+        .assertNext(person -> assertTrue(names.contains(person.getUid())))
+        .assertNext(person -> assertTrue(names.contains(person.getUid())))
+        .assertNext(person -> assertTrue(names.contains(person.getUid())))
+        .verifyComplete();
   }
 
   @Test
   void authenticate(SoftAssertions softly) {
 
-    // no password present: authentication fails
-    softly
-        .assertThatExceptionOfType(BadCredentialsException.class)
-        .isThrownBy(() -> authenticationManager
-            .authenticate(new UsernamePasswordAuthenticationToken("anna", "secret")));
-
     // set password
-    String password = ldaptiveTemplate.generateUserPassword("uid=anna,ou=people," + baseDn);
+    String password = ldaptiveTemplate.generateUserPassword("uid=anna,ou=people," + baseDn)
+        .block();
 
-    // authenticate successfully
-    LdaptiveAuthenticationToken authenticationToken = authenticationManager
-        .authenticate(new UsernamePasswordAuthenticationToken("anna", password));
-
-    softly
-        .assertThat(authenticationToken.getName())
-        .isEqualTo("anna");
-    softly
-        .assertThat(authenticationToken.isAuthenticated())
-        .isTrue();
     List<? extends GrantedAuthority> expectedRoles = List.of(
         new SimpleGrantedAuthority("developers"),
         new SimpleGrantedAuthority("managers"));
-    softly
-        .assertThat(authenticationToken.getAuthorities())
-        .containsExactlyInAnyOrderElementsOf(expectedRoles);
+    // authenticate successfully
+    StepVerifier
+        .create(authenticationManager
+            .authenticate(new UsernamePasswordAuthenticationToken("anna", password)))
+        .assertNext(authentication -> {
+          softly
+              .assertThat(authentication.isAuthenticated())
+              .isTrue();
+          softly
+              .assertThat(authentication.getAuthorities().stream()
+                  .map(grantedAuthority -> (GrantedAuthority) grantedAuthority)
+                  .toList())
+              .containsExactlyInAnyOrderElementsOf(expectedRoles);
+        })
+        .verifyComplete();
   }
 
 }

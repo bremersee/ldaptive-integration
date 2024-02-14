@@ -25,6 +25,7 @@ cn: Anna Livia Plurabelle
 sn: Plurabelle
 uid: anna
 memberOf: cn=developers,ou=groups,dc=bremersee,dc=org
+memberOf: cn=managers,ou=groups,dc=bremersee,dc=org
 
 dn: uid=hans,ou=people,dc=bremersee,dc=org
 objectclass: top
@@ -59,3 +60,4 @@ objectclass: groupOfUniqueNames
 cn: managers
 ou: manager
 uniqueMember: uid=gustav,ou=people,dc=bremersee,dc=org
+uniqueMember: uid=anna,ou=people,dc=bremersee,dc=org

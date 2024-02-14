@@ -18,8 +18,6 @@ package org.bremersee.ldaptive.spring.boot.autoconfigure.app;
 
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 
 /**
@@ -28,10 +26,7 @@ import org.springframework.context.annotation.ComponentScan;
  * @author Christian Bremer
  */
 @SpringBootConfiguration
-@EnableAutoConfiguration(exclude = {
-    RedisAutoConfiguration.class,
-    RedisReactiveAutoConfiguration.class
-})
+@EnableAutoConfiguration
 @ComponentScan(basePackageClasses = {TestConfiguration.class})
 public class TestConfiguration {
 
