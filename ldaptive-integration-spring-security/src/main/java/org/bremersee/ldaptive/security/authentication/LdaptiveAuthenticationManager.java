@@ -79,6 +79,8 @@ public class LdaptiveAuthenticationManager
 
   private final LdaptiveAuthenticationProperties authenticationProperties;
 
+  private UsernameToBindDnConverter usernameToBindDnConverter;
+
   @Setter
   private PasswordEncoder passwordEncoder;
 
@@ -97,6 +99,16 @@ public class LdaptiveAuthenticationManager
     this.connectionConfigProvider = connectionConfigProvider;
     this.connectionFactoryProvider = connectionFactoryProvider;
     this.authenticationProperties = authenticationProperties;
+    this.usernameToBindDnConverter = authenticationProperties
+        .getUsernameToBindDnConverter()
+        .apply(authenticationProperties);
+  }
+
+  public void setUsernameToBindDnConverter(
+      UsernameToBindDnConverter usernameToBindDnConverter) {
+    if (nonNull(usernameToBindDnConverter)) {
+      this.usernameToBindDnConverter = usernameToBindDnConverter;
+    }
   }
 
   /**
@@ -126,7 +138,7 @@ public class LdaptiveAuthenticationManager
       return new LdaptiveAuthenticationToken(
           user,
           LdaptiveEntryMapper.getAttributeValue(
-              user, authenticationProperties.getUserUidAttribute(), STRING_TRANSCODER, username),
+              user, authenticationProperties.getUsernameAttribute(), STRING_TRANSCODER, username),
           authenticationProperties.getRealNameAttribute(),
           authenticationProperties.getEmailAttribute(),
           roles);
@@ -150,10 +162,7 @@ public class LdaptiveAuthenticationManager
   private ConnectionFactory getConnectionFactory(String username, String password) {
     ConnectionConfig connectionConfig;
     if (bindWithAuthentication()) {
-      String bindDn = LdaptiveEntryMapper.createDn(
-          authenticationProperties.getUserUidAttribute(),
-          username,
-          authenticationProperties.getUserBaseDn());
+      String bindDn = usernameToBindDnConverter.convert(username);
       connectionConfig = connectionConfigProvider.getConnectionConfig(bindDn, password);
     } else {
       connectionConfig = connectionConfigProvider.getConnectionConfig();
@@ -283,7 +292,7 @@ public class LdaptiveAuthenticationManager
   protected Stream<? extends GrantedAuthority> getRoles(
       LdaptiveTemplate ldaptiveTemplate, LdapEntry user) {
 
-    if (!authenticationProperties.isLdapGroupsToRolesMappingEnabled()) {
+    if (Boolean.FALSE.equals(authenticationProperties.getLdapGroupsToRolesMappingEnabled())) {
       return Stream.empty();
     }
     return switch (authenticationProperties.getGroupFetchStrategy()) {
@@ -421,7 +430,7 @@ public class LdaptiveAuthenticationManager
    */
   protected String getUsername(LdapEntry user) {
     return LdaptiveEntryMapper.getAttributeValue(
-        user, authenticationProperties.getUserUidAttribute(), STRING_TRANSCODER, null);
+        user, authenticationProperties.getUsernameAttribute(), STRING_TRANSCODER, null);
   }
 
 }

@@ -20,15 +20,13 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.bremersee.ldaptive.security.authentication.templates.Template;
 import org.ldaptive.SearchScope;
 import org.springframework.util.ObjectUtils;
 
 /**
- * The type Ldaptive authentication properties.
+ * The ldaptive authentication properties.
  *
  * @author Christian Bremer
  */
@@ -36,102 +34,131 @@ import org.springframework.util.ObjectUtils;
 @NoArgsConstructor
 public class LdaptiveAuthenticationProperties {
 
-  private String userBaseDn;
-
-  private String userObjectClass;
-
-  private String userUidAttribute;
-
-  private String realNameAttribute;
-
-  private String emailAttribute;
-
-  private String passwordAttribute;
-
-  private String userFindOneFilter;
-
-  private SearchScope userFindOneSearchScope;
-
-  private boolean ldapGroupsToRolesMappingEnabled = true;
-
-  private GroupFetchStrategy groupFetchStrategy;
-
-  private String memberAttribute;
-
-  private String groupBaseDn;
-
-  private SearchScope groupSearchScope;
-
-  private String groupObjectClass;
-
-  private String groupIdAttribute;
-
-  private String groupMemberAttribute;
-
-  private String groupMemberFormat;
-
-  private Map<String, String> groupToRoleMapping = new LinkedHashMap<>();
-
-  private List<String> defaultRoles = new ArrayList<>();
-
-  private String rolePrefix;
-
-  private String roleSpaceReplacement;
-
-  private CaseTransformation roleCaseTransformation;
-
-  private AccountControlEvaluatorReference accountControlEvaluator;
+  protected UsernameToBindDnConverterProperty usernameToBindDnConverter;
 
   /**
-   * Gets user find one filter.
-   *
-   * @return the user find one filter
+   * The user base dn (like 'ou=people,dc=example,dc=org'). This value is always required.
    */
-  public String getUserFindOneFilter() {
-    if (ObjectUtils.isEmpty(userFindOneFilter)
-        && !ObjectUtils.isEmpty(getUserObjectClass())
-        && !ObjectUtils.isEmpty(getUserUidAttribute())) {
-      return String
-          .format("(&(objectClass=%s)(%s={0}))", getUserObjectClass(), getUserUidAttribute());
+  protected String userBaseDn;
+
+  /**
+   * The object class of the user (like 'inetOrgPerson'). The selected template contains a default.
+   */
+  protected String userObjectClass;
+
+  /**
+   * The username attribute of the user (like 'uid' or 'sAMAccountName'). The selected template
+   * contains a default.
+   */
+  protected String usernameAttribute;
+
+  /**
+   * Applies only for simple bind. The rdn attribute of the user. This is normally the same as the
+   * username attribute.
+   */
+  protected String userRdnAttribute;
+
+  /**
+   * The password attribute of the user (like 'userPassword'). If it is empty, a simple user bind
+   * will be done with the credentials of the user for authentication. If it is present, the
+   * connection to the ldap server must be done by a 'global' user and a password encoder that fits
+   * your requirements must be present. The default password encoder only supports SHA, that is
+   * insecure.
+   */
+  protected String passwordAttribute;
+
+  /**
+   * The filter to find the user. If it is empty, it will be generated from 'userObjectClass' and
+   * 'usernameAttribute' like this '(&(objectClass=inetOrgPerson)(uid={0}))'.
+   */
+  protected String userFindOneFilter;
+
+  /**
+   * The scope to find a user. Default is 'one level'.
+   */
+  protected SearchScope userFindOneSearchScope;
+
+  /**
+   * The real name attribute of the user. Default is 'cn'.
+   */
+  protected String realNameAttribute;
+
+  /**
+   * The email attribute of the user. Default is 'mail';
+   */
+  protected String emailAttribute;
+
+  protected AccountControlEvaluatorProperty accountControlEvaluator;
+
+
+  protected Boolean ldapGroupsToRolesMappingEnabled;
+
+  protected GroupFetchStrategy groupFetchStrategy;
+
+  protected String memberAttribute;
+
+  protected String groupBaseDn;
+
+  protected SearchScope groupSearchScope;
+
+  protected String groupObjectClass;
+
+  protected String groupIdAttribute;
+
+  protected String groupMemberAttribute;
+
+  protected String groupMemberFormat;
+
+  protected Map<String, String> groupToRoleMapping = new LinkedHashMap<>();
+
+  protected List<String> defaultRoles = new ArrayList<>();
+
+  protected String rolePrefix;
+
+  protected String roleSpaceReplacement;
+
+  protected CaseTransformation roleCaseTransformation;
+
+  public static class WithDefaults extends LdaptiveAuthenticationProperties {
+
+    public WithDefaults() {
+      usernameToBindDnConverter = UsernameToBindDnConverterProperty.BY_USER_RDN_ATTRIBUTE;
+
+      userObjectClass = "inetOrgPerson";
+      usernameAttribute = "uid";
+
+      userFindOneSearchScope = SearchScope.ONELEVEL;
+      realNameAttribute = "cn";
+      emailAttribute = "mail";
+      accountControlEvaluator = AccountControlEvaluatorProperty.NONE;
+
+      ldapGroupsToRolesMappingEnabled = true;
+      groupFetchStrategy = GroupFetchStrategy.USER_CONTAINS_GROUPS;
+      groupMemberAttribute = "memberOf";
+      groupIdAttribute = "cn";
+      groupSearchScope = SearchScope.ONELEVEL;
+      roleCaseTransformation = CaseTransformation.NONE;
     }
-    return userFindOneFilter;
-  }
 
-  /**
-   * Gets user find one search scope.
-   *
-   * @return the user find one search scope
-   */
-  public final SearchScope getUserFindOneSearchScope() {
-    return Optional.ofNullable(userFindOneSearchScope).orElse(SearchScope.ONELEVEL);
-  }
+    @Override
+    public String getUserRdnAttribute() {
+      if (ObjectUtils.isEmpty(userRdnAttribute)) {
+        return usernameAttribute;
+      }
+      return userRdnAttribute;
+    }
 
-  /**
-   * Gets group search scope.
-   *
-   * @return the group search scope
-   */
-  public final SearchScope getGroupSearchScope() {
-    return Optional.ofNullable(groupSearchScope).orElse(SearchScope.ONELEVEL);
-  }
+    @Override
+    public String getUserFindOneFilter() {
+      if (ObjectUtils.isEmpty(userFindOneFilter)
+          && !ObjectUtils.isEmpty(getUserObjectClass())
+          && !ObjectUtils.isEmpty(getUsernameAttribute())) {
+        return String
+            .format("(&(objectClass=%s)(%s={0}))", getUserObjectClass(), getUserRdnAttribute());
+      }
+      return userFindOneFilter;
+    }
 
-  /**
-   * Gets role case transformation.
-   *
-   * @return the role case transformation
-   */
-  public final CaseTransformation getRoleCaseTransformation() {
-    return Optional.ofNullable(roleCaseTransformation).orElse(CaseTransformation.NONE);
-  }
-
-  /**
-   * Gets account control evaluator.
-   *
-   * @return the account control evaluator
-   */
-  public AccountControlEvaluatorReference getAccountControlEvaluator() {
-    return Optional.ofNullable(accountControlEvaluator)
-        .orElse(AccountControlEvaluatorReference.NONE);
   }
 
   /**

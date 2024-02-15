@@ -16,15 +16,14 @@
 
 package org.bremersee.ldaptive.security.authentication.templates;
 
-import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationProperties;
+import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationProperties.WithDefaults;
 
 /**
  * Template for the group reading strategy 'group contains user'.
  *
  * @author Christian Bremer
  */
-public class GroupContainsUsersTemplate
-    extends LdaptiveAuthenticationProperties {
+public class GroupContainsUsersTemplate extends WithDefaults {
 
   /**
    * Instantiates a new Group contains users template.

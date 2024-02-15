@@ -16,7 +16,8 @@
 
 package org.bremersee.ldaptive.security.authentication.templates;
 
-import org.bremersee.ldaptive.security.authentication.AccountControlEvaluatorReference;
+import org.bremersee.ldaptive.security.authentication.AccountControlEvaluatorProperty;
+import org.bremersee.ldaptive.security.authentication.UsernameToBindDnConverterProperty;
 import org.ldaptive.SearchScope;
 
 /**
@@ -31,14 +32,16 @@ public class ActiveDirectoryTemplate
    * Instantiates a new Active directory template.
    */
   public ActiveDirectoryTemplate() {
+    setUsernameToBindDnConverter(UsernameToBindDnConverterProperty.BY_DOMAIN_EMAIL);
     setUserObjectClass("user");
-    setUserUidAttribute("sAMAccountName");
+    setUsernameAttribute("sAMAccountName");
+    setUserRdnAttribute("cn");
     setPasswordAttribute(""); // userPassword
     setRealNameAttribute("cn");
     setEmailAttribute("mail");
     setUserFindOneSearchScope(SearchScope.ONELEVEL);
     setMemberAttribute("memberOf");
-    setAccountControlEvaluator(AccountControlEvaluatorReference.ACTIVE_DIRECTORY);
+    setAccountControlEvaluator(AccountControlEvaluatorProperty.ACTIVE_DIRECTORY);
   }
 
 }

@@ -28,8 +28,6 @@ public class OpenLdapTemplate
    * Instantiates a new Open ldap template.
    */
   public OpenLdapTemplate() {
-    setUserObjectClass("inetOrgPerson");
-    setUserUidAttribute("uid");
     setRealNameAttribute("cn");
     setEmailAttribute("mail");
     setMemberAttribute("memberOf");

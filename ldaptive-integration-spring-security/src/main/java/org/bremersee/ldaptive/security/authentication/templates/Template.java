@@ -23,7 +23,7 @@ import org.mapstruct.NullValueCheckStrategy;
 import org.mapstruct.factory.Mappers;
 
 /**
- * The enum Template.
+ * The templates for ldap authentication.
  *
  * @author Christian Bremer
  */
@@ -77,7 +77,7 @@ public enum Template {
     TemplateMapper INSTANCE = Mappers.getMapper(TemplateMapper.class);
 
     /**
-     * To active directory active directory template.
+     * To active directory template.
      *
      * @param props the props
      * @return the active directory template
@@ -85,7 +85,7 @@ public enum Template {
     ActiveDirectoryTemplate toActiveDirectory(LdaptiveAuthenticationProperties props);
 
     /**
-     * To open ldap open ldap template.
+     * To open ldap template.
      *
      * @param props the props
      * @return the open ldap template
@@ -93,7 +93,7 @@ public enum Template {
     OpenLdapTemplate toOpenLdap(LdaptiveAuthenticationProperties props);
 
     /**
-     * To user group user contains groups template.
+     * To user contains groups template.
      *
      * @param props the props
      * @return the user contains groups template
@@ -101,7 +101,7 @@ public enum Template {
     UserContainsGroupsTemplate toUserGroup(LdaptiveAuthenticationProperties props);
 
     /**
-     * To group user group contains users template.
+     * To group contains users template.
      *
      * @param props the props
      * @return the group contains users template

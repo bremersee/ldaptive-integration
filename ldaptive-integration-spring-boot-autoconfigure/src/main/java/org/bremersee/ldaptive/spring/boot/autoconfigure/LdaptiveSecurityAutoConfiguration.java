@@ -25,6 +25,7 @@ import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationMana
 import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationProperties;
 import org.bremersee.ldaptive.security.authentication.LdaptivePasswordEncoderProvider;
 import org.bremersee.ldaptive.security.authentication.ReactiveLdaptiveAuthenticationManager;
+import org.bremersee.ldaptive.security.authentication.UsernameToBindDnConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -58,9 +59,9 @@ public class LdaptiveSecurityAutoConfiguration {
 
   public LdaptiveSecurityAutoConfiguration(LdaptiveAutoConfigurationProperties properties) {
     this.properties = Optional
-        .ofNullable(properties.getAuthenticationTemplate())
-        .map(t -> t.applyTemplate(properties.getAuthentication()))
-        .orElse(properties.getAuthentication());
+        .ofNullable(properties.getAuthentication().getTemplate())
+        .map(t -> t.applyTemplate(properties.getAuthentication().getConfig()))
+        .orElse(properties.getAuthentication().getConfig());
   }
 
   /**
@@ -89,14 +90,16 @@ public class LdaptiveSecurityAutoConfiguration {
   public LdaptiveAuthenticationManager ldaptiveAuthenticationManager(
       LdaptiveConnectionConfigProvider connectionConfigProvider,
       LdaptiveConnectionFactoryProvider connectionFactoryProvider,
+      ObjectProvider<UsernameToBindDnConverter> usernameToBindDnProvider,
       LdaptivePasswordEncoderProvider passwordEncoderProvider,
       ObjectProvider<AccountControlEvaluator> accountControlEvaluatorProvider) {
 
     LdaptiveAuthenticationManager manager = new LdaptiveAuthenticationManager(
         connectionConfigProvider, connectionFactoryProvider, properties);
     manager.setPasswordEncoder(passwordEncoderProvider.getPasswordEncoder());
+    usernameToBindDnProvider.ifAvailable(manager::setUsernameToBindDnConverter);
     AccountControlEvaluator accountControlEvaluator = accountControlEvaluatorProvider
-        .getIfAvailable(() -> properties.getAccountControlEvaluator().getEvaluator());
+        .getIfAvailable(() -> properties.getAccountControlEvaluator().get());
     manager.setAccountControlEvaluator(accountControlEvaluator);
     return manager;
   }
@@ -106,12 +109,14 @@ public class LdaptiveSecurityAutoConfiguration {
   public ReactiveLdaptiveAuthenticationManager reactiveLdaptiveAuthenticationManager(
       LdaptiveConnectionConfigProvider connectionConfigProvider,
       LdaptiveConnectionFactoryProvider connectionFactoryProvider,
+      ObjectProvider<UsernameToBindDnConverter> usernameToBindDnProvider,
       LdaptivePasswordEncoderProvider passwordEncoderProvider,
       ObjectProvider<AccountControlEvaluator> accountControlEvaluatorProvider) {
     return new ReactiveLdaptiveAuthenticationManager(
         ldaptiveAuthenticationManager(
             connectionConfigProvider,
             connectionFactoryProvider,
+            usernameToBindDnProvider,
             passwordEncoderProvider,
             accountControlEvaluatorProvider));
   }

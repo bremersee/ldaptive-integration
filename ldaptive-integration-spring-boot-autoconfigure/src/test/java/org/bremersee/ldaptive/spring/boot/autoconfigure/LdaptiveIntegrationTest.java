@@ -75,11 +75,11 @@ import org.springframework.web.reactive.function.client.WebClient;
         "bremersee.ldaptive.config.bind-dn=uid=admin",
         "bremersee.ldaptive.config.bind-credentials=secret",
         "bremersee.ldaptive.config.pooled=false",
-        "bremersee.ldaptive.authentication-template=open_ldap",
-        "bremersee.ldaptive.authentication.user-base-dn=ou=people,dc=bremersee,dc=org",
-        "bremersee.ldaptive.authentication.password-attribute=",
-        "bremersee.ldaptive.authentication.role-case-transformation=to_upper_case",
-        "bremersee.ldaptive.authentication.role-prefix=ROLE_",
+        "bremersee.ldaptive.authentication.template=open_ldap",
+        "bremersee.ldaptive.authentication.config.user-base-dn=ou=people,dc=bremersee,dc=org",
+        "bremersee.ldaptive.authentication.config.password-attribute=",
+        "bremersee.ldaptive.authentication.config.role-case-transformation=to_upper_case",
+        "bremersee.ldaptive.authentication.config.role-prefix=ROLE_",
     })
 @ExtendWith({SoftAssertionsExtension.class})
 @Slf4j

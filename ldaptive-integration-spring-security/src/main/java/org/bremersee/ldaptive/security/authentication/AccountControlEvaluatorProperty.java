@@ -16,7 +16,7 @@
 
 package org.bremersee.ldaptive.security.authentication;
 
-import lombok.Getter;
+import java.util.function.Supplier;
 import org.bremersee.ldaptive.security.authentication.templates.ActiveDirectoryAccountControlEvaluator;
 import org.bremersee.ldaptive.security.authentication.templates.NoAccountControlEvaluator;
 
@@ -25,8 +25,7 @@ import org.bremersee.ldaptive.security.authentication.templates.NoAccountControl
  *
  * @author Christian Bremer
  */
-@Getter
-public enum AccountControlEvaluatorReference {
+public enum AccountControlEvaluatorProperty implements Supplier<AccountControlEvaluator> {
 
   /**
    * The None.
@@ -40,8 +39,12 @@ public enum AccountControlEvaluatorReference {
 
   private final AccountControlEvaluator evaluator;
 
-  AccountControlEvaluatorReference(AccountControlEvaluator evaluator) {
+  AccountControlEvaluatorProperty(AccountControlEvaluator evaluator) {
     this.evaluator = evaluator;
   }
 
+  @Override
+  public AccountControlEvaluator get() {
+    return evaluator;
+  }
 }
