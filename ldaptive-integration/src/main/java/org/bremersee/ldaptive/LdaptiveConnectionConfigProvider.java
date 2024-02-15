@@ -53,18 +53,28 @@ public interface LdaptiveConnectionConfigProvider {
   ConnectionConfig getConnectionConfig(String bindDn, String bindCredentials);
 
   /**
-   * The type Default ldaptive connection config provider.
+   * Instantiates a new default ldaptive connection config provider.
+   *
+   * @param properties the properties
+   * @return the ldaptive connection config provider
+   */
+  static LdaptiveConnectionConfigProvider defaultProvider(LdaptiveProperties properties) {
+    return new DefaultLdaptiveConnectionConfigProvider(properties);
+  }
+
+  /**
+   * The default ldaptive connection config provider.
    */
   class DefaultLdaptiveConnectionConfigProvider implements LdaptiveConnectionConfigProvider {
 
     private final LdaptiveProperties properties;
 
     /**
-     * Instantiates a new Default ldaptive connection config provider.
+     * Instantiates a new default ldaptive connection config provider.
      *
      * @param properties the properties
      */
-    public DefaultLdaptiveConnectionConfigProvider(LdaptiveProperties properties) {
+    protected DefaultLdaptiveConnectionConfigProvider(LdaptiveProperties properties) {
       this.properties = properties;
     }
 
@@ -73,6 +83,7 @@ public interface LdaptiveConnectionConfigProvider {
       return getConnectionConfig(properties.getBindDn(), properties.getBindCredentials());
     }
 
+    @Override
     public ConnectionConfig getConnectionConfig(String bindDn, String bindCredentials) {
       return ConnectionConfig.builder()
           .autoReconnect(properties.isAutoReconnect())
@@ -88,7 +99,13 @@ public interface LdaptiveConnectionConfigProvider {
           .build();
     }
 
-    private Predicate<RetryMetadata> autoReconnectCondition(
+    /**
+     * Creates auto reconnect condition.
+     *
+     * @param properties the properties
+     * @return the auto reconnect condition
+     */
+    protected Predicate<RetryMetadata> autoReconnectCondition(
         LdaptiveProperties properties) {
       return metadata -> {
         if (properties.getReconnectAttempts() > 0 && metadata instanceof ClosedRetryMetadata) {
@@ -113,7 +130,14 @@ public interface LdaptiveConnectionConfigProvider {
       };
     }
 
-    private ConnectionInitializer[] connectionInitializers(
+    /**
+     * Creates connection initializers.
+     *
+     * @param bindDn the bind dn
+     * @param bindCredentials the bind credentials
+     * @return the connection initializers
+     */
+    protected ConnectionInitializer[] connectionInitializers(
         String bindDn,
         String bindCredentials) {
 
@@ -136,7 +160,12 @@ public interface LdaptiveConnectionConfigProvider {
       return bci;
     }
 
-    private SslConfig sslConfig() {
+    /**
+     * Creates ssl config.
+     *
+     * @return the ssl config
+     */
+    protected SslConfig sslConfig() {
       if (hasSslConfig()) {
         SslConfig sc = new SslConfig();
         sc.setCredentialConfig(sslCredentialConfig());
@@ -165,7 +194,13 @@ public interface LdaptiveConnectionConfigProvider {
       return x509;
     }
 
-    private static boolean hasText(String value) {
+    /**
+     * Has text boolean.
+     *
+     * @param value the value
+     * @return the boolean
+     */
+    protected static boolean hasText(String value) {
       return Objects.nonNull(value) && !value.isBlank();
     }
   }

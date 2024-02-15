@@ -19,9 +19,7 @@ package org.bremersee.ldaptive.spring.boot.autoconfigure;
 import lombok.extern.slf4j.Slf4j;
 import org.bremersee.exception.ServiceException;
 import org.bremersee.ldaptive.LdaptiveConnectionConfigProvider;
-import org.bremersee.ldaptive.LdaptiveConnectionConfigProvider.DefaultLdaptiveConnectionConfigProvider;
 import org.bremersee.ldaptive.LdaptiveConnectionFactoryProvider;
-import org.bremersee.ldaptive.LdaptiveConnectionFactoryProvider.DefaultLdaptiveConnectionFactoryProvider;
 import org.bremersee.ldaptive.LdaptiveOperations;
 import org.bremersee.ldaptive.LdaptiveProperties;
 import org.bremersee.ldaptive.LdaptiveTemplate;
@@ -38,7 +36,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.context.event.EventListener;
 import org.springframework.util.ClassUtils;
 
@@ -87,13 +84,13 @@ public class LdaptiveAutoConfiguration {
   @ConditionalOnMissingBean(LdaptiveConnectionConfigProvider.class)
   @Bean
   public LdaptiveConnectionConfigProvider connectionConfigProvider() {
-    return new DefaultLdaptiveConnectionConfigProvider(properties);
+    return LdaptiveConnectionConfigProvider.defaultProvider(properties);
   }
 
   @ConditionalOnMissingBean(LdaptiveConnectionFactoryProvider.class)
   @Bean
   public LdaptiveConnectionFactoryProvider connectionFactoryProvider() {
-    return new DefaultLdaptiveConnectionFactoryProvider(properties);
+    return LdaptiveConnectionFactoryProvider.defaultProvider(properties);
   }
 
   /**

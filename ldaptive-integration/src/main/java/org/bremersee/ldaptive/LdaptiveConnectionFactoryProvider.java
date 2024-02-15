@@ -49,18 +49,27 @@ public interface LdaptiveConnectionFactoryProvider {
   PooledConnectionFactory getPooledConnectionFactory(ConnectionConfig connectionConfig);
 
   /**
-   * The type Default ldaptive connection factory provider.
+   * Instantiates a new default ldaptive connection factory provider.
+   *
+   * @param properties the properties
+   */
+  static LdaptiveConnectionFactoryProvider defaultProvider(LdaptiveProperties properties) {
+    return new DefaultLdaptiveConnectionFactoryProvider(properties);
+  }
+
+  /**
+   * The default ldaptive connection factory provider.
    */
   class DefaultLdaptiveConnectionFactoryProvider implements LdaptiveConnectionFactoryProvider {
 
     private final LdaptiveProperties properties;
 
     /**
-     * Instantiates a new Default ldaptive connection factory provider.
+     * Instantiates a new default ldaptive connection factory provider.
      *
      * @param properties the properties
      */
-    public DefaultLdaptiveConnectionFactoryProvider(LdaptiveProperties properties) {
+    DefaultLdaptiveConnectionFactoryProvider(LdaptiveProperties properties) {
       this.properties = properties;
     }
 

@@ -38,8 +38,8 @@ class LdaptiveConnectionConfigProviderTest {
   @Test
   void getConnectionConfig(SoftAssertions softly) {
     LdaptiveProperties properties = new LdaptiveProperties();
-    LdaptiveConnectionConfigProvider target = new DefaultLdaptiveConnectionConfigProvider(
-        properties);
+    LdaptiveConnectionConfigProvider target = LdaptiveConnectionConfigProvider
+        .defaultProvider(properties);
 
     softly
         .assertThat(target.getConnectionConfig().getConnectionInitializers())
@@ -66,8 +66,8 @@ class LdaptiveConnectionConfigProviderTest {
   @Test
   void testGetConnectionConfig(SoftAssertions softly) {
     LdaptiveProperties properties = new LdaptiveProperties();
-    LdaptiveConnectionConfigProvider target = new DefaultLdaptiveConnectionConfigProvider(
-        properties);
+    LdaptiveConnectionConfigProvider target = LdaptiveConnectionConfigProvider
+        .defaultProvider(properties);
 
     softly
         .assertThat(target.getConnectionConfig(null, null)

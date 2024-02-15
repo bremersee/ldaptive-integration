@@ -16,12 +16,14 @@
 
 package org.bremersee.ldaptive.security.authentication;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.springframework.security.crypto.keygen.KeyGenerators;
 import org.springframework.security.crypto.password.LdapShaPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
- * The interface Ldaptive password encoder provider.
+ * The password encoder provider.
  *
  * @author Christian Bremer
  */
@@ -35,8 +37,18 @@ public interface LdaptivePasswordEncoderProvider {
   PasswordEncoder getPasswordEncoder();
 
   /**
-   * The type Default ldaptive password encoder provider.
+   * Creates a new default provider.
+   *
+   * @return the default password encoder provider
    */
+  static LdaptivePasswordEncoderProvider defaultProvider() {
+    return new DefaultLdaptivePasswordEncoderProvider();
+  }
+
+  /**
+   * The default password encoder provider.
+   */
+  @NoArgsConstructor(access = AccessLevel.PACKAGE)
   class DefaultLdaptivePasswordEncoderProvider implements LdaptivePasswordEncoderProvider {
 
     @Override

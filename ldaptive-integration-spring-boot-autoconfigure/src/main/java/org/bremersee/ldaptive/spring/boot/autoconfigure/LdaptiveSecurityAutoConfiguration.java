@@ -24,7 +24,6 @@ import org.bremersee.ldaptive.security.authentication.AccountControlEvaluator;
 import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationManager;
 import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationProperties;
 import org.bremersee.ldaptive.security.authentication.LdaptivePasswordEncoderProvider;
-import org.bremersee.ldaptive.security.authentication.LdaptivePasswordEncoderProvider.DefaultLdaptivePasswordEncoderProvider;
 import org.bremersee.ldaptive.security.authentication.ReactiveLdaptiveAuthenticationManager;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -82,7 +81,7 @@ public class LdaptiveSecurityAutoConfiguration {
   @ConditionalOnMissingBean(LdaptivePasswordEncoderProvider.class)
   @Bean
   public LdaptivePasswordEncoderProvider ldaptivePasswordEncoderProvider() {
-    return new DefaultLdaptivePasswordEncoderProvider();
+    return LdaptivePasswordEncoderProvider.defaultProvider();
   }
 
   @ConditionalOnWebApplication(type = Type.SERVLET)
