@@ -30,6 +30,9 @@ public class DefaultLdaptiveErrorHandler extends AbstractLdaptiveErrorHandler {
   @Override
   public LdaptiveException map(LdapException ldapException) {
     return LdaptiveException.builder()
+        .reason(Optional.ofNullable(ldapException)
+            .map(LdapException::getMessage)
+            .orElse("Unknown"))
         .errorCode(errorCode(ldapException))
         .httpStatus(httpStatus(ldapException))
         .cause(ldapException)

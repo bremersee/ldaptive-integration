@@ -16,6 +16,7 @@
 
 package org.bremersee.ldaptive;
 
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.ldaptive.LdapException;
 
@@ -36,6 +37,10 @@ public abstract class AbstractLdaptiveErrorHandler implements LdaptiveErrorHandl
       ldaptiveException = map((LdapException) t);
     } else {
       ldaptiveException = LdaptiveException.builder()
+          .reason(Optional.ofNullable(t)
+              .filter(throwable -> throwable instanceof Exception)
+              .map(Throwable::getMessage)
+              .orElse("Unknown"))
           .cause(t)
           .build();
     }
