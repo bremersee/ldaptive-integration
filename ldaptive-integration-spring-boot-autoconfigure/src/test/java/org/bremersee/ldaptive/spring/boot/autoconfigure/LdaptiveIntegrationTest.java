@@ -75,7 +75,7 @@ import org.springframework.web.reactive.function.client.WebClient;
         "bremersee.ldaptive.config.bind-dn=uid=admin",
         "bremersee.ldaptive.config.bind-credentials=secret",
         "bremersee.ldaptive.config.pooled=false",
-        "bremersee.ldaptive.autentication-template=open_ldap",
+        "bremersee.ldaptive.authentication-template=open_ldap",
         "bremersee.ldaptive.authentication.user-base-dn=ou=people,dc=bremersee,dc=org",
         "bremersee.ldaptive.authentication.password-attribute=",
         "bremersee.ldaptive.authentication.role-case-transformation=to_upper_case",

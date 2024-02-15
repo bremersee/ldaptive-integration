@@ -42,7 +42,7 @@ public class LdaptiveAutoConfigurationProperties {
   @NestedConfigurationProperty
   private LdaptiveProperties config = new LdaptiveProperties();
 
-  private Template autenticationTemplate = Template.ACTIVE_DIRECTORY;
+  private Template authenticationTemplate = Template.ACTIVE_DIRECTORY;
 
   @NestedConfigurationProperty
   private LdaptiveAuthenticationProperties authentication = new LdaptiveAuthenticationProperties();

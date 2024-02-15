@@ -58,7 +58,7 @@ public class LdaptiveSecurityAutoConfiguration {
 
   public LdaptiveSecurityAutoConfiguration(LdaptiveAutoConfigurationProperties properties) {
     this.properties = Optional
-        .ofNullable(properties.getAutenticationTemplate())
+        .ofNullable(properties.getAuthenticationTemplate())
         .map(t -> t.applyTemplate(properties.getAuthentication()))
         .orElse(properties.getAuthentication());
   }

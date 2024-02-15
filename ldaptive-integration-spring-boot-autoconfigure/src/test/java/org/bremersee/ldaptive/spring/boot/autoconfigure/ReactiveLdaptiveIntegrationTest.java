@@ -64,7 +64,7 @@ import reactor.test.StepVerifier;
         "bremersee.ldaptive.config.bind-dn=uid=admin",
         "bremersee.ldaptive.config.bind-credentials=secret",
         "bremersee.ldaptive.config.pooled=false",
-        "bremersee.ldaptive.autentication-template=group_contains_users",
+        "bremersee.ldaptive.authentication-template=group_contains_users",
         "bremersee.ldaptive.authentication.user-base-dn=ou=people,dc=bremersee,dc=org",
         "bremersee.ldaptive.authentication.user-object-class=inetOrgPerson",
         "bremersee.ldaptive.authentication.user-uid-attribute=uid",
