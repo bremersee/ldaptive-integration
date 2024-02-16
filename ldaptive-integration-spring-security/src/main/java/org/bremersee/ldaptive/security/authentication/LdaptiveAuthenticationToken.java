@@ -20,6 +20,7 @@ import java.io.Serial;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import lombok.Getter;
 import org.bremersee.ldaptive.serializable.SerLdapAttr;
 import org.ldaptive.LdapEntry;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
@@ -35,6 +36,9 @@ public class LdaptiveAuthenticationToken extends AbstractAuthenticationToken {
 
   @Serial
   private static final long serialVersionUID = 1L;
+
+  @Getter
+  private final String dn;
 
   private final Map<String, SerLdapAttr> ldapEntry;
 
@@ -64,6 +68,7 @@ public class LdaptiveAuthenticationToken extends AbstractAuthenticationToken {
     Assert.notNull(user, "Ldap entry of user must be present.");
     Assert.notNull(username, "Username must be present.");
     this.ldapEntry = SerLdapAttr.toMap(user);
+    this.dn = user.getDn();
     this.username = username;
     this.realNameAttribute = realNameAttribute;
     this.emailAttribute = emailAttribute;

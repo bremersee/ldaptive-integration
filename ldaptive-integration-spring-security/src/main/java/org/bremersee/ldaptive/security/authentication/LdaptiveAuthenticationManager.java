@@ -123,12 +123,34 @@ public class LdaptiveAuthenticationManager
     }
   }
 
+  /**
+   * Changes the password of the user. Extended Operation(1.3.6.1.4.1.4203.1.11.1) must be
+   * supported.
+   *
+   * @param username the username
+   * @param currentRawPassword the current password
+   * @param newRawPassword the new password
+   */
+  public void changePassword(String username, String currentRawPassword, String newRawPassword) {
+    ConnectionFactory connectionFactory = getConnectionFactory(username, currentRawPassword);
+    String dn = authenticate(username, currentRawPassword, connectionFactory).getDn();
+    LdaptiveTemplate ldaptiveTemplate = new LdaptiveTemplate(connectionFactory);
+    ldaptiveTemplate.modifyUserPassword(dn, currentRawPassword, newRawPassword);
+  }
+
   @Override
   public LdaptiveAuthenticationToken authenticate(Authentication authentication)
       throws AuthenticationException {
     String username = authentication.getName();
     String password = String.valueOf(authentication.getCredentials());
     ConnectionFactory connectionFactory = getConnectionFactory(username, password);
+    return authenticate(username, password, connectionFactory);
+  }
+
+  protected LdaptiveAuthenticationToken authenticate(
+      String username,
+      String password,
+      ConnectionFactory connectionFactory) {
     try {
       LdaptiveTemplate ldaptiveTemplate = new LdaptiveTemplate(connectionFactory);
       LdapEntry user = getUser(ldaptiveTemplate, username);

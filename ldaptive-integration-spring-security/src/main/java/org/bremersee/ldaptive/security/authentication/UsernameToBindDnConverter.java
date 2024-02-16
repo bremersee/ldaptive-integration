@@ -16,10 +16,15 @@
 
 package org.bremersee.ldaptive.security.authentication;
 
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.bremersee.ldaptive.LdaptiveEntryMapper;
+import org.ldaptive.dn.Dn;
+import org.ldaptive.dn.NameValue;
+import org.ldaptive.dn.RDn;
 
 /**
  * Converts a username (like 'foobar') into it's bind dn (like
@@ -85,35 +90,22 @@ public interface UsernameToBindDnConverter {
 
     @Override
     public String convert(String username) {
-      return extractDomainName(properties.getUserBaseDn())
+      return Optional.of(extractDomainName(properties.getUserBaseDn()))
+          .filter(domain -> !domain.isEmpty())
           .map(domain -> username + "@" + domain)
           .orElseThrow(() -> new IllegalStateException(String
               .format("Converting username %s to bind dn is not possible.", username)));
     }
 
-    private static Optional<String> extractDomainName(String baseDn) {
-      return Optional.ofNullable(baseDn)
-          .map(dn -> {
-            StringBuilder domainBuilder = new StringBuilder();
-            String[] pairs = baseDn.split(Pattern.quote(","));
-            for (String pair : pairs) {
-              String[] parts = pair.split(Pattern.quote("="));
-              if (parts.length != 2) {
-                throw new IllegalArgumentException(String
-                    .format("'%s' is not a parseable ldap base dn.", baseDn));
-              }
-              String name = parts[0].trim();
-              String value = parts[1].trim();
-              if ("dc".equalsIgnoreCase(name) && !value.isEmpty()) {
-                if (!domainBuilder.isEmpty()) {
-                  domainBuilder.append('.');
-                }
-                domainBuilder.append(value);
-              }
-            }
-            return domainBuilder.toString();
-          })
-          .filter(domain -> !domain.isEmpty());
+    private static String extractDomainName(String baseDn) {
+      return Stream.ofNullable(baseDn)
+          .map(Dn::new)
+          .map(Dn::getRDns)
+          .flatMap(Collection::stream)
+          .map(RDn::getNameValue)
+          .filter(nameValue -> nameValue.hasName("dc"))
+          .map(NameValue::getStringValue)
+          .collect(Collectors.joining("."));
     }
 
   }

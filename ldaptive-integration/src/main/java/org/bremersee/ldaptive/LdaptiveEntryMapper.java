@@ -30,6 +30,9 @@ import org.ldaptive.LdapAttribute;
 import org.ldaptive.LdapEntry;
 import org.ldaptive.ModifyRequest;
 import org.ldaptive.beans.LdapEntryMapper;
+import org.ldaptive.dn.Dn;
+import org.ldaptive.dn.NameValue;
+import org.ldaptive.dn.RDn;
 import org.ldaptive.transcode.ValueTranscoder;
 
 /**
@@ -409,7 +412,11 @@ public interface LdaptiveEntryMapper<T> extends LdapEntryMapper<T> {
       String rdn,
       String rdnValue,
       String baseDn) {
-    return rdn + "=" + rdnValue + "," + baseDn;
+    return Dn.builder()
+        .add(new RDn(new NameValue(rdn, rdnValue)))
+        .add(new Dn(baseDn))
+        .build()
+        .format();
   }
 
   /**
@@ -422,15 +429,11 @@ public interface LdaptiveEntryMapper<T> extends LdapEntryMapper<T> {
     if (dn == null) {
       return null;
     }
-    int start = dn.indexOf('=');
-    if (start < 0) {
-      return dn;
+    Dn parsedDn = new Dn(dn);
+    if (parsedDn.isEmpty()) {
+      return null;
     }
-    int end = dn.indexOf(',', start);
-    if (end < 0) {
-      return dn.substring(start + 1).trim();
-    }
-    return dn.substring(start + 1, end).trim();
+    return parsedDn.getRDn().getNameValue().getStringValue();
   }
 
 }
