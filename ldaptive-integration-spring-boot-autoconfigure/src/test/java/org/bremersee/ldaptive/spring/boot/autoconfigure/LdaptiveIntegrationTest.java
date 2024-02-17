@@ -80,6 +80,8 @@ import org.springframework.web.reactive.function.client.WebClient;
         "bremersee.ldaptive.authentication.config.password-attribute=",
         "bremersee.ldaptive.authentication.config.role-case-transformation=to_upper_case",
         "bremersee.ldaptive.authentication.config.role-prefix=ROLE_",
+        "bremersee.ldaptive.authentication.config.group-to-role-mapping[0].group-name=managers",
+        "bremersee.ldaptive.authentication.config.group-to-role-mapping[0].role-name=admins",
     })
 @ExtendWith({SoftAssertionsExtension.class})
 @Slf4j
@@ -205,7 +207,7 @@ class LdaptiveIntegrationTest {
         .isTrue();
     List<? extends GrantedAuthority> expectedRoles = List.of(
         new SimpleGrantedAuthority("ROLE_DEVELOPERS"),
-        new SimpleGrantedAuthority("ROLE_MANAGERS"));
+        new SimpleGrantedAuthority("ROLE_ADMINS"));
     softly
         .assertThat(authenticationToken.getAuthorities())
         .containsExactlyInAnyOrderElementsOf(expectedRoles);

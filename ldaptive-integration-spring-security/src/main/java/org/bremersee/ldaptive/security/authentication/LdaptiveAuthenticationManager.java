@@ -30,6 +30,7 @@ import org.bremersee.ldaptive.LdaptiveConnectionFactoryProvider;
 import org.bremersee.ldaptive.LdaptiveEntryMapper;
 import org.bremersee.ldaptive.LdaptiveException;
 import org.bremersee.ldaptive.LdaptiveTemplate;
+import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationProperties.GroupToRoleMapping;
 import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationProperties.StringReplacement;
 import org.bremersee.ldaptive.security.authentication.templates.NoAccountControlEvaluator;
 import org.ldaptive.CompareRequest;
@@ -400,38 +401,46 @@ public class LdaptiveAuthenticationManager
   }
 
   /**
-   * To granted authority granted authority.
+   * To granted authority.
    *
-   * @param role the role
+   * @param groupName the group name
    * @return the granted authority
    */
-  protected GrantedAuthority toGrantedAuthority(String role) {
-    return new SimpleGrantedAuthority(mapRole(role));
+  protected GrantedAuthority toGrantedAuthority(String groupName) {
+    return new SimpleGrantedAuthority(mapGroupToRole(groupName));
   }
 
   /**
-   * Map role string.
+   * Map group to role.
    *
-   * @param role the role
-   * @return the string
+   * @param groupName the group name
+   * @return the role name
    */
-  protected String mapRole(String role) {
-    return Optional.ofNullable(authenticationProperties.getGroupToRoleMapping())
-        .flatMap(mapping -> Optional.ofNullable(mapping.get(role)))
-        .orElse(normalizeRole(role));
+  protected String mapGroupToRole(String groupName) {
+    String roleName = Stream.ofNullable(authenticationProperties.getGroupToRoleMapping())
+        .flatMap(Collection::stream)
+        .filter(mapping -> groupName.equalsIgnoreCase(mapping.getGroupName()))
+        .map(GroupToRoleMapping::getRoleName)
+        .filter(role -> !isEmpty(role))
+        .filter(role -> !role.isBlank())
+        .findFirst()
+        .orElse(groupName);
+    return normalizeRole(roleName);
   }
 
   /**
-   * Normalize role string.
+   * Normalize role name.
    *
    * @param roleName the role name
-   * @return the string
+   * @return the normalized role name
    */
   protected String normalizeRole(String roleName) {
     String normalizedRoleName = roleName;
-    for (StringReplacement replacement : authenticationProperties.getRoleStringReplacements()) {
-      normalizedRoleName = normalizedRoleName
-          .replaceAll(replacement.getRegex(), replacement.getReplacement());
+    if (!isEmpty(authenticationProperties.getRoleStringReplacements())) {
+      for (StringReplacement replacement : authenticationProperties.getRoleStringReplacements()) {
+        normalizedRoleName = normalizedRoleName
+            .replaceAll(replacement.getRegex(), replacement.getReplacement());
+      }
     }
     normalizedRoleName = switch (authenticationProperties.getRoleCaseTransformation()) {
       case NONE -> normalizedRoleName;

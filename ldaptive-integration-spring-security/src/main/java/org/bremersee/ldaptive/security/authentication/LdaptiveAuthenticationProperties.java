@@ -17,9 +17,7 @@
 package org.bremersee.ldaptive.security.authentication;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.ldaptive.SearchScope;
@@ -109,15 +107,15 @@ public class LdaptiveAuthenticationProperties {
 
   protected String groupMemberFormat;
 
-  protected Map<String, String> groupToRoleMapping = new LinkedHashMap<>();
+  protected List<GroupToRoleMapping> groupToRoleMapping;
 
-  protected List<String> defaultRoles = new ArrayList<>();
+  protected List<String> defaultRoles;
 
   protected String rolePrefix;
 
   protected CaseTransformation roleCaseTransformation;
 
-  protected List<StringReplacement> roleStringReplacements = new ArrayList<>();
+  protected List<StringReplacement> roleStringReplacements;
 
   public static class WithDefaults extends LdaptiveAuthenticationProperties {
 
@@ -137,6 +135,9 @@ public class LdaptiveAuthenticationProperties {
       groupMemberAttribute = "memberOf";
       groupIdAttribute = "cn";
       groupSearchScope = SearchScope.ONELEVEL;
+      groupToRoleMapping = new ArrayList<>();
+      defaultRoles = new ArrayList<>();
+      roleStringReplacements = new ArrayList<>();
       roleCaseTransformation = CaseTransformation.NONE;
     }
 
@@ -211,7 +212,14 @@ public class LdaptiveAuthenticationProperties {
      * The string to be substituted for each match.
      */
     private String replacement;
+  }
 
+  @Data
+  public static class GroupToRoleMapping {
+
+    private String groupName;
+
+    private String roleName;
   }
 
 }

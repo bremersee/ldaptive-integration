@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
@@ -379,10 +378,9 @@ class LdaptiveEntryMapperTest {
   @Test
   void getRdn() {
     assertNull(LdaptiveEntryMapper.getRdn(null));
-    assertThrowsExactly(
-        IllegalArgumentException.class,
-        () -> LdaptiveEntryMapper.getRdn("no-real-dn"));
     assertEquals("anna", LdaptiveEntryMapper.getRdn("cn=anna,cn=users,dc=example,dc=org"));
+    assertEquals("no-real-dn", LdaptiveEntryMapper.getRdn("no-real-dn"));
+    assertEquals("", LdaptiveEntryMapper.getRdn(""));
   }
 
   /**

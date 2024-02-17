@@ -429,11 +429,20 @@ public interface LdaptiveEntryMapper<T> extends LdapEntryMapper<T> {
     if (dn == null) {
       return null;
     }
-    Dn parsedDn = new Dn(dn);
-    if (parsedDn.isEmpty()) {
-      return null;
+    try {
+      Dn parsedDn = new Dn(dn);
+      if (parsedDn.isEmpty()) {
+        return dn;
+      }
+      return parsedDn.getRDn().getNameValue().getStringValue();
+
+    } catch (IllegalArgumentException ignored) {
+      return dn;
     }
-    return parsedDn.getRDn().getNameValue().getStringValue();
+  }
+
+  public static void main(String[] args) {
+    new Dn("");
   }
 
 }
