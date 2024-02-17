@@ -30,6 +30,7 @@ import org.bremersee.ldaptive.LdaptiveConnectionFactoryProvider;
 import org.bremersee.ldaptive.LdaptiveEntryMapper;
 import org.bremersee.ldaptive.LdaptiveException;
 import org.bremersee.ldaptive.LdaptiveTemplate;
+import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationProperties.StringReplacement;
 import org.bremersee.ldaptive.security.authentication.templates.NoAccountControlEvaluator;
 import org.ldaptive.CompareRequest;
 import org.ldaptive.ConnectionConfig;
@@ -428,9 +429,9 @@ public class LdaptiveAuthenticationManager
    */
   protected String normalizeRole(String roleName) {
     String normalizedRoleName = roleName;
-    if (!isEmpty(authenticationProperties.getRoleSpaceReplacement())) {
+    for (StringReplacement replacement : authenticationProperties.getRoleStringReplacements()) {
       normalizedRoleName = normalizedRoleName
-          .replaceAll(Pattern.quote(" "), authenticationProperties.getRoleSpaceReplacement());
+          .replaceAll(replacement.getRegex(), replacement.getReplacement());
     }
     normalizedRoleName = switch (authenticationProperties.getRoleCaseTransformation()) {
       case NONE -> normalizedRoleName;

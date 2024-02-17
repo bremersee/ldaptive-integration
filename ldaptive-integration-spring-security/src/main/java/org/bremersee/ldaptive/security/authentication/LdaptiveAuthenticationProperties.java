@@ -115,9 +115,9 @@ public class LdaptiveAuthenticationProperties {
 
   protected String rolePrefix;
 
-  protected String roleSpaceReplacement;
-
   protected CaseTransformation roleCaseTransformation;
+
+  protected List<StringReplacement> roleStringReplacements = new ArrayList<>();
 
   public static class WithDefaults extends LdaptiveAuthenticationProperties {
 
@@ -196,6 +196,22 @@ public class LdaptiveAuthenticationProperties {
      * To lower case case transformation.
      */
     TO_LOWER_CASE
+  }
+
+  @Data
+  public static class StringReplacement {
+
+    /**
+     * The regular expression to which the string is to be matched. '{@code [- ]}' for example would
+     * replace every '-' and every space.
+     */
+    private String regex;
+
+    /**
+     * The string to be substituted for each match.
+     */
+    private String replacement;
+
   }
 
 }
