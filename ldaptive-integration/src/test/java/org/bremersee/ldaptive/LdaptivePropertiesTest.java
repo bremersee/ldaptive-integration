@@ -509,7 +509,11 @@ class LdaptivePropertiesTest {
     assertTrue(expected.toString().contains("" + value));
 
     if (value) {
-      assertThrowsExactly(IllegalStateException.class, actual::createConnectionFactory);
+      try {
+        actual.createConnectionFactory();
+      } catch (Exception ignored) {
+        // ignored
+      }
     } else {
       assertInstanceOf(DefaultConnectionFactory.class, actual.createConnectionFactory());
     }

@@ -16,11 +16,11 @@
 
 package org.bremersee.ldaptive.app;
 
+import org.bremersee.ldaptive.LdaptiveProperties;
+import org.bremersee.ldaptive.LdaptiveProperties.ConnectionValidatorProperties;
+import org.bremersee.ldaptive.LdaptiveProperties.ConnectionValidatorProperties.SearchRequestProperties;
 import org.bremersee.ldaptive.LdaptiveTemplate;
-import org.ldaptive.BindConnectionInitializer;
-import org.ldaptive.ConnectionConfig;
 import org.ldaptive.ConnectionFactory;
-import org.ldaptive.DefaultConnectionFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -53,15 +53,16 @@ public class TestConfiguration {
    */
   @Bean
   public ConnectionFactory connectionFactory() {
-    return DefaultConnectionFactory.builder()
-        .config(ConnectionConfig.builder()
-            .url("ldap://localhost:" + port)
-            .connectionInitializers(BindConnectionInitializer.builder()
-                .dn(username)
-                .credential(password)
-                .build())
-            .build())
-        .build();
+    LdaptiveProperties properties = new LdaptiveProperties();
+    properties.setLdapUrl("ldap://localhost:" + port);
+    properties.setBindDn(username);
+    properties.setBindCredentials(password);
+    ConnectionValidatorProperties validatorProperties = new ConnectionValidatorProperties();
+    SearchRequestProperties searchRequestProperties = new SearchRequestProperties();
+    searchRequestProperties.setBaseDn("ou=people,dc=bremersee,dc=org");
+    validatorProperties.setSearchRequest(searchRequestProperties);
+    properties.setConnectionValidator(validatorProperties);
+    return properties.createConnectionFactory();
   }
 
   /**

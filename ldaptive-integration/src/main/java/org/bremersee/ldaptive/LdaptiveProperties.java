@@ -70,7 +70,7 @@ public class LdaptiveProperties {
    * URL of the LDAP server(s) separated by space. For example
    * {@code ldaps://ldap1.example.org:636 ldaps://ldap2.example.org:636}
    */
-  private String ldapUrl = "ldap://localhost:12389";
+  private String ldapUrl;
 
   /**
    * Duration of time that connects will block.
@@ -435,18 +435,20 @@ public class LdaptiveProperties {
        * @return the search request
        */
       public SearchRequest createSearchRequest() {
-        SearchRequest searchRequest = new SearchRequest();
-        searchRequest.setBaseDn(Objects.requireNonNullElse(getBaseDn(), ""));
-        if (Objects.nonNull(getSearchFilter().getFilter())
-            && !getSearchFilter().getFilter().isEmpty()) {
+        String baseDn = Objects.requireNonNullElse(getBaseDn(), "");
+        SearchRequest searchRequest;
+        if (Objects.nonNull(getSearchFilter()) && hasText(getSearchFilter().getFilter())) {
+          searchRequest = new SearchRequest(baseDn);
           searchRequest.setFilter(getSearchFilter().getFilter());
-        }
-        searchRequest.setReturnAttributes(returnAttributesAsArray());
-        if (getSearchScope() != null) {
-          searchRequest.setSearchScope(getSearchScope());
-        }
-        if (getSizeLimit() != null) {
-          searchRequest.setSizeLimit(getSizeLimit());
+          searchRequest.setReturnAttributes(returnAttributesAsArray());
+          if (getSearchScope() != null) {
+            searchRequest.setSearchScope(getSearchScope());
+          }
+          if (getSizeLimit() != null) {
+            searchRequest.setSizeLimit(getSizeLimit());
+          }
+        } else {
+          searchRequest = SearchRequest.objectScopeSearchRequest(baseDn, returnAttributesAsArray());
         }
         return searchRequest;
       }
