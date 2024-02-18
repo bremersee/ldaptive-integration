@@ -441,8 +441,4 @@ public interface LdaptiveEntryMapper<T> extends LdapEntryMapper<T> {
     }
   }
 
-  public static void main(String[] args) {
-    new Dn("");
-  }
-
 }

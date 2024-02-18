@@ -24,13 +24,22 @@ import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.UUID;
+import org.bremersee.ldaptive.LdaptiveProperties.ConnectionStrategy;
 import org.bremersee.ldaptive.LdaptiveProperties.ConnectionValidatorProperties;
+import org.bremersee.ldaptive.LdaptiveProperties.ConnectionValidatorProperties.SearchRequestProperties;
+import org.bremersee.ldaptive.LdaptiveProperties.ConnectionValidatorProperties.SearchRequestProperties.SearchFilterProperties;
+import org.bremersee.ldaptive.LdaptiveProperties.ReconnectStrategy;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.ldaptive.ConnectionConfig;
 import org.ldaptive.DefaultConnectionFactory;
+import org.ldaptive.DnsSrvConnectionStrategy;
+import org.ldaptive.RandomConnectionStrategy;
+import org.ldaptive.RoundRobinConnectionStrategy;
+import org.ldaptive.SearchScope;
 
 /**
  * The type Ldaptive properties test.
@@ -39,6 +48,11 @@ import org.ldaptive.DefaultConnectionFactory;
  */
 class LdaptivePropertiesTest {
 
+  /**
+   * Is immutable.
+   *
+   * @param immutable the immutable
+   */
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void isImmutable(boolean immutable) {
@@ -59,6 +73,9 @@ class LdaptivePropertiesTest {
     }
   }
 
+  /**
+   * Gets ldap url.
+   */
   @Test
   void getLdapUrl() {
     String value = UUID.randomUUID().toString();
@@ -72,6 +89,9 @@ class LdaptivePropertiesTest {
     assertTrue(expected.toString().contains(value));
   }
 
+  /**
+   * Gets connect timeout.
+   */
   @Test
   void getConnectTimeout() {
     LdaptiveProperties expected = new LdaptiveProperties();
@@ -86,6 +106,9 @@ class LdaptivePropertiesTest {
     assertEquals(actual.getConnectTimeout(), connectionConfig.getConnectTimeout());
   }
 
+  /**
+   * Gets start tls timeout.
+   */
   @Test
   void getStartTlsTimeout() {
     LdaptiveProperties expected = new LdaptiveProperties();
@@ -100,6 +123,9 @@ class LdaptivePropertiesTest {
     assertEquals(actual.getStartTlsTimeout(), connectionConfig.getStartTLSTimeout());
   }
 
+  /**
+   * Gets response timeout.
+   */
   @Test
   void getResponseTimeout() {
     LdaptiveProperties expected = new LdaptiveProperties();
@@ -114,6 +140,160 @@ class LdaptivePropertiesTest {
     assertEquals(actual.getResponseTimeout(), connectionConfig.getResponseTimeout());
   }
 
+  /**
+   * Gets reconnect timeout.
+   */
+  @Test
+  void getReconnectTimeout() {
+    LdaptiveProperties expected = new LdaptiveProperties();
+    expected.setReconnectTimeout(Duration.ofMillis(123456789L));
+
+    LdaptiveProperties actual = new LdaptiveProperties();
+    actual.setReconnectTimeout(Duration.ofMillis(123456789L));
+
+    assertEquals(expected, actual);
+
+    ConnectionConfig connectionConfig = actual.createConnectionConfig();
+    assertEquals(actual.getReconnectTimeout(), connectionConfig.getReconnectTimeout());
+  }
+
+  /**
+   * Gets reconnect strategy.
+   *
+   * @param strategy the strategy
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {
+      "ONE_RECONNECT_ATTEMPT",
+      "INFINITE_RECONNECT_ATTEMPTS",
+      "INFINITE_RECONNECT_ATTEMPTS_WITH_BACKOFF"
+  })
+  void getReconnectStrategy(String strategy) {
+    ReconnectStrategy reconnectStrategy = ReconnectStrategy.valueOf(strategy);
+    LdaptiveProperties expected = new LdaptiveProperties();
+    expected.setReconnectStrategy(reconnectStrategy);
+
+    LdaptiveProperties actual = new LdaptiveProperties();
+    actual.setReconnectStrategy(reconnectStrategy);
+
+    assertEquals(expected, actual);
+    assertTrue(expected.toString().contains(strategy));
+
+    ConnectionConfig connectionConfig = actual.createConnectionConfig();
+    assertNotNull(connectionConfig.getAutoReconnectCondition());
+  }
+
+  /**
+   * Gets reconnect strategy infinitive.
+   */
+  @Test
+  void getReconnectStrategyInfinitive() {
+    ReconnectStrategy reconnectStrategy = ReconnectStrategy.INFINITE_RECONNECT_ATTEMPTS;
+    LdaptiveProperties expected = new LdaptiveProperties();
+    expected.setReconnectStrategy(reconnectStrategy);
+
+    LdaptiveProperties actual = new LdaptiveProperties();
+    actual.setReconnectStrategy(reconnectStrategy);
+
+    assertEquals(expected, actual);
+    assertTrue(expected.toString().contains(reconnectStrategy.name()));
+  }
+
+  /**
+   * Gets reconnect strategy infinitive with backoff.
+   */
+  @Test
+  void getReconnectStrategyInfinitiveWithBackoff() {
+    ReconnectStrategy reconnectStrategy = ReconnectStrategy
+        .INFINITE_RECONNECT_ATTEMPTS_WITH_BACKOFF;
+    LdaptiveProperties expected = new LdaptiveProperties();
+    expected.setReconnectStrategy(reconnectStrategy);
+
+    LdaptiveProperties actual = new LdaptiveProperties();
+    actual.setReconnectStrategy(reconnectStrategy);
+
+    assertEquals(expected, actual);
+    assertTrue(expected.toString().contains(reconnectStrategy.name()));
+  }
+
+  /**
+   * Gets connection validator.
+   */
+  @Test
+  void getConnectionValidator() {
+    LdaptiveProperties target = new LdaptiveProperties();
+    ConnectionValidatorProperties expected = new ConnectionValidatorProperties();
+    target.setConnectionValidator(expected);
+    expected.setValidateTimeout(Duration.ofMillis(123456789L));
+    expected.setValidatePeriod(Duration.ofMillis(54321));
+    SearchRequestProperties searchRequest = new SearchRequestProperties();
+    expected.setSearchRequest(searchRequest);
+    searchRequest.setBaseDn("cn=users,dc=ad,dc=example,dc=org");
+    SearchFilterProperties filter = new SearchFilterProperties();
+    filter.setFilter("(uid=administrator)");
+    searchRequest.setSearchFilter(filter);
+    searchRequest.setSearchScope(SearchScope.ONELEVEL);
+    searchRequest.setSizeLimit(1);
+    searchRequest.setReturnAttributes(List.of("cn"));
+
+    assertEquals(expected, target.getConnectionValidator());
+
+    ConnectionConfig connectionConfig = target.createConnectionConfig();
+    assertNotNull(connectionConfig.getConnectionValidator());
+  }
+
+  /**
+   * Gets connection validator without attributes.
+   */
+  @Test
+  void getConnectionValidatorWithoutAttributes() {
+    LdaptiveProperties target = new LdaptiveProperties();
+    ConnectionValidatorProperties expected = new ConnectionValidatorProperties();
+    target.setConnectionValidator(expected);
+    expected.setValidateTimeout(Duration.ofMillis(456789L));
+    expected.setValidatePeriod(Duration.ofMillis(7654321));
+    SearchRequestProperties searchRequest = new SearchRequestProperties();
+    expected.setSearchRequest(searchRequest);
+    searchRequest.setBaseDn("cn=users,dc=ad,dc=example,dc=org");
+    SearchFilterProperties filter = new SearchFilterProperties();
+    filter.setFilter("(uid=administrator)");
+    searchRequest.setSearchFilter(filter);
+    searchRequest.setSearchScope(SearchScope.ONELEVEL);
+    searchRequest.setSizeLimit(1);
+
+    assertEquals(expected, target.getConnectionValidator());
+
+    ConnectionConfig connectionConfig = target.createConnectionConfig();
+    assertNotNull(connectionConfig.getConnectionValidator());
+  }
+
+  /**
+   * Gets auto replay.
+   *
+   * @param value the value
+   */
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void getAutoReplay(boolean value) {
+    LdaptiveProperties expected = new LdaptiveProperties();
+    expected.setAutoReplay(value);
+    assertEquals(value, expected.isAutoReplay());
+
+    LdaptiveProperties actual = new LdaptiveProperties();
+    actual.setAutoReplay(value);
+
+    assertEquals(expected, actual);
+    assertTrue(expected.toString().contains("" + value));
+
+    ConnectionConfig connectionConfig = actual.createConnectionConfig();
+    assertEquals(actual.isAutoReplay(), connectionConfig.getAutoReplay());
+  }
+
+  /**
+   * Is use start tls.
+   *
+   * @param value the value
+   */
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void isUseStartTls(boolean value) {
@@ -131,6 +311,9 @@ class LdaptivePropertiesTest {
     assertEquals(actual.isUseStartTls(), connectionConfig.getUseStartTLS());
   }
 
+  /**
+   * Gets trust certificates.
+   */
   @Test
   void getTrustCertificates() {
     String value = UUID.randomUUID().toString();
@@ -144,6 +327,9 @@ class LdaptivePropertiesTest {
     assertTrue(expected.toString().contains(value));
   }
 
+  /**
+   * Gets authentication certificate.
+   */
   @Test
   void getAuthenticationCertificate() {
     String value = UUID.randomUUID().toString();
@@ -157,6 +343,9 @@ class LdaptivePropertiesTest {
     assertTrue(expected.toString().contains(value));
   }
 
+  /**
+   * Gets authentication key.
+   */
   @Test
   void getAuthenticationKey() {
     String value = UUID.randomUUID().toString();
@@ -170,6 +359,9 @@ class LdaptivePropertiesTest {
     assertTrue(expected.toString().contains(value));
   }
 
+  /**
+   * Gets bind dn.
+   */
   @Test
   void getBindDn() {
     String value = UUID.randomUUID().toString();
@@ -187,6 +379,9 @@ class LdaptivePropertiesTest {
     assertEquals(1, connectionConfig.getConnectionInitializers().length);
   }
 
+  /**
+   * Gets bind credential.
+   */
   @Test
   void getBindCredential() {
     String value = UUID.randomUUID().toString();
@@ -195,6 +390,11 @@ class LdaptivePropertiesTest {
     assertEquals(value, expected.getBindCredentials());
   }
 
+  /**
+   * Is fast bind.
+   *
+   * @param value the value
+   */
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void isFastBind(boolean value) {
@@ -211,6 +411,90 @@ class LdaptivePropertiesTest {
     }
   }
 
+  /**
+   * Gets connection strategy.
+   *
+   * @param strategy the strategy
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {
+      "ACTIVE_PASSIVE",
+      "RANDOM",
+      "ROUND_ROBIN",
+      "DNS"
+  })
+  void getConnectionStrategy(String strategy) {
+    ConnectionStrategy connectionStrategy = ConnectionStrategy.valueOf(strategy);
+    LdaptiveProperties expected = new LdaptiveProperties();
+    expected.setConnectionStrategy(connectionStrategy);
+
+    LdaptiveProperties actual = new LdaptiveProperties();
+    actual.setConnectionStrategy(connectionStrategy);
+
+    assertEquals(expected, actual);
+    assertTrue(expected.toString().contains(strategy));
+
+    ConnectionConfig connectionConfig = actual.createConnectionConfig();
+    assertTrue(connectionStrategy.get().getClass()
+        .isAssignableFrom(connectionConfig.getConnectionStrategy().getClass()));
+  }
+
+  /**
+   * Gets connection strategy random.
+   */
+  @Test
+  void getConnectionStrategyRandom() {
+    ConnectionStrategy connectionStrategy = ConnectionStrategy.RANDOM;
+    LdaptiveProperties expected = new LdaptiveProperties();
+    expected.setConnectionStrategy(connectionStrategy);
+
+    LdaptiveProperties actual = new LdaptiveProperties();
+    actual.setConnectionStrategy(connectionStrategy);
+
+    ConnectionConfig connectionConfig = actual.createConnectionConfig();
+    assertTrue(RandomConnectionStrategy.class
+        .isAssignableFrom(connectionConfig.getConnectionStrategy().getClass()));
+  }
+
+  /**
+   * Gets connection strategy round robin.
+   */
+  @Test
+  void getConnectionStrategyRoundRobin() {
+    ConnectionStrategy connectionStrategy = ConnectionStrategy.ROUND_ROBIN;
+    LdaptiveProperties expected = new LdaptiveProperties();
+    expected.setConnectionStrategy(connectionStrategy);
+
+    LdaptiveProperties actual = new LdaptiveProperties();
+    actual.setConnectionStrategy(connectionStrategy);
+
+    ConnectionConfig connectionConfig = actual.createConnectionConfig();
+    assertTrue(RoundRobinConnectionStrategy.class
+        .isAssignableFrom(connectionConfig.getConnectionStrategy().getClass()));
+  }
+
+  /**
+   * Gets connection strategy dns.
+   */
+  @Test
+  void getConnectionStrategyDns() {
+    ConnectionStrategy connectionStrategy = ConnectionStrategy.DNS;
+    LdaptiveProperties expected = new LdaptiveProperties();
+    expected.setConnectionStrategy(connectionStrategy);
+
+    LdaptiveProperties actual = new LdaptiveProperties();
+    actual.setConnectionStrategy(connectionStrategy);
+
+    ConnectionConfig connectionConfig = actual.createConnectionConfig();
+    assertTrue(DnsSrvConnectionStrategy.class
+        .isAssignableFrom(connectionConfig.getConnectionStrategy().getClass()));
+  }
+
+  /**
+   * Is pooled.
+   *
+   * @param value the value
+   */
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void isPooled(boolean value) {
@@ -231,6 +515,9 @@ class LdaptivePropertiesTest {
     }
   }
 
+  /**
+   * Gets min pool size.
+   */
   @Test
   void getMinPoolSize() {
     LdaptiveProperties expected = new LdaptiveProperties();
@@ -243,6 +530,9 @@ class LdaptivePropertiesTest {
     assertTrue(expected.toString().contains("1234567"));
   }
 
+  /**
+   * Gets max pool size.
+   */
   @Test
   void getMaxPoolSize() {
     LdaptiveProperties expected = new LdaptiveProperties();
@@ -255,6 +545,9 @@ class LdaptivePropertiesTest {
     assertTrue(expected.toString().contains("1234567"));
   }
 
+  /**
+   * Is validate on check in.
+   */
   @Test
   void isValidateOnCheckIn() {
     LdaptiveProperties expected = new LdaptiveProperties();
@@ -268,6 +561,9 @@ class LdaptivePropertiesTest {
     assertTrue(expected.toString().contains("true"));
   }
 
+  /**
+   * Is validate on check out.
+   */
   @Test
   void isValidateOnCheckOut() {
     LdaptiveProperties expected = new LdaptiveProperties();
@@ -281,6 +577,9 @@ class LdaptivePropertiesTest {
     assertTrue(expected.toString().contains("true"));
   }
 
+  /**
+   * Is validate periodically.
+   */
   @Test
   void isValidatePeriodically() {
     LdaptiveProperties expected = new LdaptiveProperties();
@@ -294,6 +593,9 @@ class LdaptivePropertiesTest {
     assertTrue(expected.toString().contains("true"));
   }
 
+  /**
+   * Gets validate period.
+   */
   @Test
   void getValidatePeriod() {
     LdaptiveProperties expected = new LdaptiveProperties();
@@ -305,6 +607,9 @@ class LdaptivePropertiesTest {
     assertEquals(expected, actual);
   }
 
+  /**
+   * Gets prune period.
+   */
   @Test
   void getPrunePeriod() {
     LdaptiveProperties expected = new LdaptiveProperties();
@@ -316,6 +621,9 @@ class LdaptivePropertiesTest {
     assertEquals(expected, actual);
   }
 
+  /**
+   * Gets idle time.
+   */
   @Test
   void getIdleTime() {
     LdaptiveProperties expected = new LdaptiveProperties();
@@ -327,6 +635,9 @@ class LdaptivePropertiesTest {
     assertEquals(expected, actual);
   }
 
+  /**
+   * Gets block wait time.
+   */
   @Test
   void getBlockWaitTime() {
     LdaptiveProperties expected = new LdaptiveProperties();
@@ -338,6 +649,9 @@ class LdaptivePropertiesTest {
     assertEquals(expected, actual);
   }
 
+  /**
+   * Gets search validator.
+   */
   @Test
   void getSearchValidator() {
     LdaptiveProperties expected = new LdaptiveProperties();

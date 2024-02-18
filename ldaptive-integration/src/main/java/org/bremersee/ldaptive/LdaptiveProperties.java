@@ -261,6 +261,7 @@ public class LdaptiveProperties {
    * The ssl configuration.
    */
   @Data
+  @NoArgsConstructor
   public static class SslProperties {
 
     /**
@@ -470,6 +471,7 @@ public class LdaptiveProperties {
    * The connection pool properties.
    */
   @Data
+  @NoArgsConstructor
   public static class ConnectionPoolProperties {
 
     /**

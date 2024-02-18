@@ -15,6 +15,9 @@ import org.ldaptive.LdapAttribute;
 import org.ldaptive.LdapEntry;
 import org.ldaptive.LdapUtils;
 
+/**
+ * The type Ser ldap attr test.
+ */
 class SerLdapAttrTest {
 
   private static final SerLdapAttr emptyLdapAttr = new SerLdapAttr(
@@ -26,6 +29,11 @@ class SerLdapAttrTest {
     return new SerLdapAttr(attr);
   }
 
+  /**
+   * Size.
+   *
+   * @param binary the binary
+   */
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void size(boolean binary) {
@@ -34,6 +42,11 @@ class SerLdapAttrTest {
         .isEqualTo(1);
   }
 
+  /**
+   * Gets string value.
+   *
+   * @param binary the binary
+   */
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void getStringValue(boolean binary) {
@@ -47,12 +60,20 @@ class SerLdapAttrTest {
     }
   }
 
+  /**
+   * Gets string value empty.
+   */
   @Test
   void getStringValueEmpty() {
     assertThat(emptyLdapAttr.getStringValue())
         .isNull();
   }
 
+  /**
+   * Gets string values.
+   *
+   * @param binary the binary
+   */
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void getStringValues(boolean binary) {
@@ -66,6 +87,11 @@ class SerLdapAttrTest {
     }
   }
 
+  /**
+   * Has value.
+   *
+   * @param binary the binary
+   */
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void hasValue(boolean binary) {
@@ -79,6 +105,11 @@ class SerLdapAttrTest {
     }
   }
 
+  /**
+   * To map.
+   *
+   * @param binary the binary
+   */
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void toMap(boolean binary) {
@@ -93,12 +124,20 @@ class SerLdapAttrTest {
         .isEqualTo(Map.of("uid", ldapAttr));
   }
 
+  /**
+   * To map from null.
+   */
   @Test
   void toMapFromNull() {
     assertThat(SerLdapAttr.toMap(null))
         .isEmpty();
   }
 
+  /**
+   * Test equals.
+   *
+   * @param binary the binary
+   */
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void testEquals(boolean binary) {
@@ -107,6 +146,11 @@ class SerLdapAttrTest {
         .isTrue();
   }
 
+  /**
+   * Test hash code.
+   *
+   * @param binary the binary
+   */
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void testHashCode(boolean binary) {
@@ -115,6 +159,11 @@ class SerLdapAttrTest {
         .isEqualTo(createSerLdapAttr(binary).hashCode());
   }
 
+  /**
+   * Gets attribute name.
+   *
+   * @param binary the binary
+   */
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void getAttributeName(boolean binary) {
@@ -123,6 +172,11 @@ class SerLdapAttrTest {
         .isEqualTo("uid");
   }
 
+  /**
+   * Gets binary value.
+   *
+   * @param binary the binary
+   */
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void getBinaryValue(boolean binary) {
@@ -131,12 +185,20 @@ class SerLdapAttrTest {
         .isEqualTo("test".getBytes(StandardCharsets.UTF_8));
   }
 
+  /**
+   * Gets binary value empty.
+   */
   @Test
   void getBinaryValueEmpty() {
     assertThat(emptyLdapAttr.getBinaryValue())
         .isNull();
   }
 
+  /**
+   * Gets binary values.
+   *
+   * @param binary the binary
+   */
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void getBinaryValues(boolean binary) {
@@ -145,6 +207,11 @@ class SerLdapAttrTest {
         .containsExactly("test".getBytes(StandardCharsets.UTF_8));
   }
 
+  /**
+   * Is binary.
+   *
+   * @param binary the binary
+   */
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void isBinary(boolean binary) {
@@ -153,6 +220,11 @@ class SerLdapAttrTest {
         .isEqualTo(binary);
   }
 
+  /**
+   * Test to string.
+   *
+   * @param binary the binary
+   */
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void testToString(boolean binary) {
@@ -161,6 +233,11 @@ class SerLdapAttrTest {
         .contains("uid");
   }
 
+  /**
+   * Test serialization.
+   *
+   * @throws Exception the exception
+   */
   @Test
   void testSerialization() throws Exception {
     SerLdapAttr expected = createSerLdapAttr(false);

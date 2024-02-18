@@ -80,8 +80,8 @@ public class UserAccountControlValueTranscoder extends AbstractStringValueTransc
   }
 
   /**
-   * Determines whether an account is enabled or not. If the user account control value is {@code
-   * null}, {@code true} will be returned (account is enabled).
+   * Determines whether an account is enabled or not. If the user account control value is
+   * {@code null}*, {@code true} will be returned (account is enabled).
    *
    * @param userAccountControlValue the user account control value (can be {@code null})
    * @return the boolean
