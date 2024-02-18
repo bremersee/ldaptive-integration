@@ -18,14 +18,13 @@ package org.bremersee.ldaptive.spring.boot.autoconfigure;
 
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.bremersee.ldaptive.LdaptiveConnectionConfigProvider;
-import org.bremersee.ldaptive.LdaptiveConnectionFactoryProvider;
 import org.bremersee.ldaptive.security.authentication.AccountControlEvaluator;
 import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationManager;
 import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationProperties;
 import org.bremersee.ldaptive.security.authentication.LdaptivePasswordEncoderProvider;
 import org.bremersee.ldaptive.security.authentication.ReactiveLdaptiveAuthenticationManager;
 import org.bremersee.ldaptive.security.authentication.UsernameToBindDnConverter;
+import org.ldaptive.ConnectionConfig;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -46,10 +45,7 @@ import org.springframework.util.ClassUtils;
     "org.bremersee.ldaptive.LdaptiveTemplate",
     "org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationManager"
 })
-@ConditionalOnBean({
-    LdaptiveConnectionConfigProvider.class,
-    LdaptiveConnectionFactoryProvider.class
-})
+@ConditionalOnBean({ConnectionConfig.class})
 @AutoConfigureAfter({LdaptiveAutoConfiguration.class})
 @EnableConfigurationProperties(LdaptiveAutoConfigurationProperties.class)
 @Slf4j
@@ -88,14 +84,13 @@ public class LdaptiveSecurityAutoConfiguration {
   @ConditionalOnWebApplication(type = Type.SERVLET)
   @Bean
   public LdaptiveAuthenticationManager ldaptiveAuthenticationManager(
-      LdaptiveConnectionConfigProvider connectionConfigProvider,
-      LdaptiveConnectionFactoryProvider connectionFactoryProvider,
+      ConnectionConfig connectionConfig,
       ObjectProvider<UsernameToBindDnConverter> usernameToBindDnProvider,
       LdaptivePasswordEncoderProvider passwordEncoderProvider,
       ObjectProvider<AccountControlEvaluator> accountControlEvaluatorProvider) {
 
     LdaptiveAuthenticationManager manager = new LdaptiveAuthenticationManager(
-        connectionConfigProvider, connectionFactoryProvider, properties);
+        connectionConfig, properties);
     manager.setPasswordEncoder(passwordEncoderProvider.getPasswordEncoder());
     usernameToBindDnProvider.ifAvailable(manager::setUsernameToBindDnConverter);
     AccountControlEvaluator accountControlEvaluator = accountControlEvaluatorProvider
@@ -107,15 +102,13 @@ public class LdaptiveSecurityAutoConfiguration {
   @ConditionalOnWebApplication(type = Type.REACTIVE)
   @Bean
   public ReactiveLdaptiveAuthenticationManager reactiveLdaptiveAuthenticationManager(
-      LdaptiveConnectionConfigProvider connectionConfigProvider,
-      LdaptiveConnectionFactoryProvider connectionFactoryProvider,
+      ConnectionConfig connectionConfig,
       ObjectProvider<UsernameToBindDnConverter> usernameToBindDnProvider,
       LdaptivePasswordEncoderProvider passwordEncoderProvider,
       ObjectProvider<AccountControlEvaluator> accountControlEvaluatorProvider) {
     return new ReactiveLdaptiveAuthenticationManager(
         ldaptiveAuthenticationManager(
-            connectionConfigProvider,
-            connectionFactoryProvider,
+            connectionConfig,
             usernameToBindDnProvider,
             passwordEncoderProvider,
             accountControlEvaluatorProvider));

@@ -135,17 +135,13 @@ class ReactiveLdaptiveIntegrationTest {
   @Test
   void authenticate(SoftAssertions softly) {
 
-    // set password
-    String password = ldaptiveTemplate.generateUserPassword("uid=anna,ou=people," + baseDn)
-        .block();
-
     List<? extends GrantedAuthority> expectedRoles = List.of(
         new SimpleGrantedAuthority("developers"),
         new SimpleGrantedAuthority("managers"));
     // authenticate successfully
     StepVerifier
         .create(authenticationManager
-            .authenticate(new UsernamePasswordAuthenticationToken("anna", password)))
+            .authenticate(new UsernamePasswordAuthenticationToken("anna", "topsecret")))
         .assertNext(authentication -> {
           softly
               .assertThat(authentication.isAuthenticated())

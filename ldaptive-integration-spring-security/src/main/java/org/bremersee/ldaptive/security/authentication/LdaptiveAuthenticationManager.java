@@ -21,23 +21,25 @@ import static java.util.Objects.nonNull;
 import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import lombok.Setter;
-import org.bremersee.ldaptive.LdaptiveConnectionConfigProvider;
-import org.bremersee.ldaptive.LdaptiveConnectionFactoryProvider;
 import org.bremersee.ldaptive.LdaptiveEntryMapper;
 import org.bremersee.ldaptive.LdaptiveException;
 import org.bremersee.ldaptive.LdaptiveTemplate;
 import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationProperties.GroupToRoleMapping;
 import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationProperties.StringReplacement;
 import org.bremersee.ldaptive.security.authentication.templates.NoAccountControlEvaluator;
+import org.ldaptive.BindConnectionInitializer;
 import org.ldaptive.CompareRequest;
 import org.ldaptive.ConnectionConfig;
 import org.ldaptive.ConnectionFactory;
+import org.ldaptive.DefaultConnectionFactory;
 import org.ldaptive.FilterTemplate;
 import org.ldaptive.LdapEntry;
+import org.ldaptive.LdapException;
 import org.ldaptive.ResultCode;
 import org.ldaptive.SearchRequest;
 import org.ldaptive.transcode.StringValueTranscoder;
@@ -75,9 +77,7 @@ public class LdaptiveAuthenticationManager
    */
   protected static final StringValueTranscoder STRING_TRANSCODER = new StringValueTranscoder();
 
-  private final LdaptiveConnectionConfigProvider connectionConfigProvider;
-
-  private final LdaptiveConnectionFactoryProvider connectionFactoryProvider;
+  private final ConnectionConfig connectionConfig;
 
   private final LdaptiveAuthenticationProperties authenticationProperties;
 
@@ -91,15 +91,13 @@ public class LdaptiveAuthenticationManager
   /**
    * Instantiates a new Ldaptive authentication manager.
    *
-   * @param connectionConfigProvider the connection config provider
-   * @param connectionFactoryProvider the connection factory provider
+   * @param connectionConfig the connection config
    * @param authenticationProperties the authentication properties
    */
-  public LdaptiveAuthenticationManager(LdaptiveConnectionConfigProvider connectionConfigProvider,
-      LdaptiveConnectionFactoryProvider connectionFactoryProvider,
+  public LdaptiveAuthenticationManager(
+      ConnectionConfig connectionConfig,
       LdaptiveAuthenticationProperties authenticationProperties) {
-    this.connectionConfigProvider = connectionConfigProvider;
-    this.connectionFactoryProvider = connectionFactoryProvider;
+    this.connectionConfig = connectionConfig;
     this.authenticationProperties = authenticationProperties;
     this.usernameToBindDnConverter = authenticationProperties
         .getUsernameToBindDnConverter()
@@ -184,14 +182,16 @@ public class LdaptiveAuthenticationManager
   }
 
   private ConnectionFactory getConnectionFactory(String username, String password) {
-    ConnectionConfig connectionConfig;
     if (bindWithAuthentication()) {
+      ConnectionConfig authConfig = ConnectionConfig.copy(this.connectionConfig);
       String bindDn = usernameToBindDnConverter.convert(username);
-      connectionConfig = connectionConfigProvider.getConnectionConfig(bindDn, password);
-    } else {
-      connectionConfig = connectionConfigProvider.getConnectionConfig();
+      authConfig.setConnectionInitializers(BindConnectionInitializer.builder()
+          .dn(bindDn)
+          .credential(password)
+          .build());
+      return new DefaultConnectionFactory(authConfig);
     }
-    return connectionFactoryProvider.getDefaultConnectionFactory(connectionConfig);
+    return new DefaultConnectionFactory(connectionConfig);
   }
 
   /**
@@ -219,7 +219,6 @@ public class LdaptiveAuthenticationManager
                   .build())
           .orElseThrow(() -> new UsernameNotFoundException(
               "User '" + username + "' was not found."));
-
     } catch (LdaptiveException le) {
       throw getBindException(le);
     }
@@ -227,18 +226,30 @@ public class LdaptiveAuthenticationManager
 
   private RuntimeException getBindException(LdaptiveException exception) {
     BadCredentialsException badCredentials = new BadCredentialsException("Password doesn't match.");
-    if (ResultCode.INVALID_CREDENTIALS.equals(exception.getResultCode())) {
+    if (isInvalidCredentialsException(exception.getLdapException())) {
       return badCredentials;
     }
-    String message = Optional.ofNullable(exception.getLdapException())
-        .map(Throwable::getMessage)
+    return exception;
+  }
+
+  private boolean isInvalidCredentialsException(LdapException exception) {
+    if (Objects.isNull(exception)) {
+      return false;
+    }
+    if (ResultCode.INVALID_CREDENTIALS.equals(exception.getResultCode())) {
+      return true;
+    }
+    String message = Optional.ofNullable(exception.getMessage())
         .map(String::toLowerCase)
         .orElse("");
     String text = ("resultCode=" + ResultCode.INVALID_CREDENTIALS).toLowerCase();
     if (ResultCode.CONNECT_ERROR.equals(exception.getResultCode()) && message.contains(text)) {
-      return badCredentials;
+      return true;
     }
-    return exception;
+    if (exception.getCause() instanceof LdapException cause) {
+      return isInvalidCredentialsException(cause);
+    }
+    return false;
   }
 
   /**

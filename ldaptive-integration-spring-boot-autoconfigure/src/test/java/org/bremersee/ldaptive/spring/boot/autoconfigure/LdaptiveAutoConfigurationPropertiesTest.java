@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.util.UUID;
-import org.bremersee.ldaptive.LdaptiveProperties.SearchValidatorProperties;
+import org.bremersee.ldaptive.LdaptiveProperties.ConnectionValidatorProperties;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -99,10 +99,10 @@ class LdaptiveAutoConfigurationPropertiesTest {
   void getTrustCertificates() {
     String value = UUID.randomUUID().toString();
     LdaptiveAutoConfigurationProperties expected = new LdaptiveAutoConfigurationProperties();
-    expected.getConfig().setTrustCertificates(value);
+    expected.getConfig().getSslConfig().setTrustCertificates(value);
 
     LdaptiveAutoConfigurationProperties actual = new LdaptiveAutoConfigurationProperties();
-    actual.getConfig().setTrustCertificates(value);
+    actual.getConfig().getSslConfig().setTrustCertificates(value);
 
     assertEquals(expected, actual);
     assertTrue(expected.toString().contains(value));
@@ -112,10 +112,10 @@ class LdaptiveAutoConfigurationPropertiesTest {
   void getAuthenticationCertificate() {
     String value = UUID.randomUUID().toString();
     LdaptiveAutoConfigurationProperties expected = new LdaptiveAutoConfigurationProperties();
-    expected.getConfig().setAuthenticationCertificate(value);
+    expected.getConfig().getSslConfig().setAuthenticationCertificate(value);
 
     LdaptiveAutoConfigurationProperties actual = new LdaptiveAutoConfigurationProperties();
-    actual.getConfig().setAuthenticationCertificate(value);
+    actual.getConfig().getSslConfig().setAuthenticationCertificate(value);
 
     assertEquals(expected, actual);
     assertTrue(expected.toString().contains(value));
@@ -125,10 +125,10 @@ class LdaptiveAutoConfigurationPropertiesTest {
   void getAuthenticationKey() {
     String value = UUID.randomUUID().toString();
     LdaptiveAutoConfigurationProperties expected = new LdaptiveAutoConfigurationProperties();
-    expected.getConfig().setAuthenticationKey(value);
+    expected.getConfig().getSslConfig().setAuthenticationKey(value);
 
     LdaptiveAutoConfigurationProperties actual = new LdaptiveAutoConfigurationProperties();
-    actual.getConfig().setAuthenticationKey(value);
+    actual.getConfig().getSslConfig().setAuthenticationKey(value);
 
     assertEquals(expected, actual);
     assertTrue(expected.toString().contains(value));
@@ -171,10 +171,10 @@ class LdaptiveAutoConfigurationPropertiesTest {
   @Test
   void getMinPoolSize() {
     LdaptiveAutoConfigurationProperties expected = new LdaptiveAutoConfigurationProperties();
-    expected.getConfig().setMinPoolSize(1234567);
+    expected.getConfig().getConnectionPool().setMinPoolSize(1234567);
 
     LdaptiveAutoConfigurationProperties actual = new LdaptiveAutoConfigurationProperties();
-    actual.getConfig().setMinPoolSize(1234567);
+    actual.getConfig().getConnectionPool().setMinPoolSize(1234567);
 
     assertEquals(expected, actual);
     assertTrue(expected.toString().contains("1234567"));
@@ -183,10 +183,10 @@ class LdaptiveAutoConfigurationPropertiesTest {
   @Test
   void getMaxPoolSize() {
     LdaptiveAutoConfigurationProperties expected = new LdaptiveAutoConfigurationProperties();
-    expected.getConfig().setMaxPoolSize(1234567);
+    expected.getConfig().getConnectionPool().setMaxPoolSize(1234567);
 
     LdaptiveAutoConfigurationProperties actual = new LdaptiveAutoConfigurationProperties();
-    actual.getConfig().setMaxPoolSize(1234567);
+    actual.getConfig().getConnectionPool().setMaxPoolSize(1234567);
 
     assertEquals(expected, actual);
     assertTrue(expected.toString().contains("1234567"));
@@ -195,11 +195,11 @@ class LdaptiveAutoConfigurationPropertiesTest {
   @Test
   void isValidateOnCheckIn() {
     LdaptiveAutoConfigurationProperties expected = new LdaptiveAutoConfigurationProperties();
-    expected.getConfig().setValidateOnCheckIn(true);
-    assertTrue(expected.getConfig().isValidateOnCheckIn());
+    expected.getConfig().getConnectionPool().setValidateOnCheckIn(true);
+    assertTrue(expected.getConfig().getConnectionPool().isValidateOnCheckIn());
 
     LdaptiveAutoConfigurationProperties actual = new LdaptiveAutoConfigurationProperties();
-    actual.getConfig().setValidateOnCheckIn(true);
+    actual.getConfig().getConnectionPool().setValidateOnCheckIn(true);
 
     assertEquals(expected, actual);
     assertTrue(expected.toString().contains("true"));
@@ -208,11 +208,11 @@ class LdaptiveAutoConfigurationPropertiesTest {
   @Test
   void isValidateOnCheckOut() {
     LdaptiveAutoConfigurationProperties expected = new LdaptiveAutoConfigurationProperties();
-    expected.getConfig().setValidateOnCheckOut(true);
-    assertTrue(expected.getConfig().isValidateOnCheckOut());
+    expected.getConfig().getConnectionPool().setValidateOnCheckOut(true);
+    assertTrue(expected.getConfig().getConnectionPool().isValidateOnCheckOut());
 
     LdaptiveAutoConfigurationProperties actual = new LdaptiveAutoConfigurationProperties();
-    actual.getConfig().setValidateOnCheckOut(true);
+    actual.getConfig().getConnectionPool().setValidateOnCheckOut(true);
 
     assertEquals(expected, actual);
     assertTrue(expected.toString().contains("true"));
@@ -221,11 +221,11 @@ class LdaptiveAutoConfigurationPropertiesTest {
   @Test
   void isValidatePeriodically() {
     LdaptiveAutoConfigurationProperties expected = new LdaptiveAutoConfigurationProperties();
-    expected.getConfig().setValidatePeriodically(true);
-    assertTrue(expected.getConfig().isValidatePeriodically());
+    expected.getConfig().getConnectionPool().setValidatePeriodically(true);
+    assertTrue(expected.getConfig().getConnectionPool().isValidatePeriodically());
 
     LdaptiveAutoConfigurationProperties actual = new LdaptiveAutoConfigurationProperties();
-    actual.getConfig().setValidatePeriodically(true);
+    actual.getConfig().getConnectionPool().setValidatePeriodically(true);
 
     assertEquals(expected, actual);
     assertTrue(expected.toString().contains("true"));
@@ -234,10 +234,10 @@ class LdaptiveAutoConfigurationPropertiesTest {
   @Test
   void getValidatePeriod() {
     LdaptiveAutoConfigurationProperties expected = new LdaptiveAutoConfigurationProperties();
-    expected.getConfig().setValidatePeriod(Duration.ofMillis(123456789L));
+    expected.getConfig().getConnectionPool().getValidator().setValidatePeriod(Duration.ofMillis(123456789L));
 
     LdaptiveAutoConfigurationProperties actual = new LdaptiveAutoConfigurationProperties();
-    actual.getConfig().setValidatePeriod(Duration.ofMillis(123456789L));
+    actual.getConfig().getConnectionPool().getValidator().setValidatePeriod(Duration.ofMillis(123456789L));
 
     assertEquals(expected, actual);
   }
@@ -245,10 +245,10 @@ class LdaptiveAutoConfigurationPropertiesTest {
   @Test
   void getPrunePeriod() {
     LdaptiveAutoConfigurationProperties expected = new LdaptiveAutoConfigurationProperties();
-    expected.getConfig().setPrunePeriod(Duration.ofMillis(123456789L));
+    expected.getConfig().getConnectionPool().setPrunePeriod(Duration.ofMillis(123456789L));
 
     LdaptiveAutoConfigurationProperties actual = new LdaptiveAutoConfigurationProperties();
-    actual.getConfig().setPrunePeriod(Duration.ofMillis(123456789L));
+    actual.getConfig().getConnectionPool().setPrunePeriod(Duration.ofMillis(123456789L));
 
     assertEquals(expected, actual);
   }
@@ -256,10 +256,10 @@ class LdaptiveAutoConfigurationPropertiesTest {
   @Test
   void getIdleTime() {
     LdaptiveAutoConfigurationProperties expected = new LdaptiveAutoConfigurationProperties();
-    expected.getConfig().setIdleTime(Duration.ofMillis(123456789L));
+    expected.getConfig().getConnectionPool().setIdleTime(Duration.ofMillis(123456789L));
 
     LdaptiveAutoConfigurationProperties actual = new LdaptiveAutoConfigurationProperties();
-    actual.getConfig().setIdleTime(Duration.ofMillis(123456789L));
+    actual.getConfig().getConnectionPool().setIdleTime(Duration.ofMillis(123456789L));
 
     assertEquals(expected, actual);
   }
@@ -267,10 +267,10 @@ class LdaptiveAutoConfigurationPropertiesTest {
   @Test
   void getBlockWaitTime() {
     LdaptiveAutoConfigurationProperties expected = new LdaptiveAutoConfigurationProperties();
-    expected.getConfig().setBlockWaitTime(Duration.ofMillis(123456789L));
+    expected.getConfig().getConnectionPool().setBlockWaitTime(Duration.ofMillis(123456789L));
 
     LdaptiveAutoConfigurationProperties actual = new LdaptiveAutoConfigurationProperties();
-    actual.getConfig().setBlockWaitTime(Duration.ofMillis(123456789L));
+    actual.getConfig().getConnectionPool().setBlockWaitTime(Duration.ofMillis(123456789L));
 
     assertEquals(expected, actual);
   }
@@ -278,7 +278,7 @@ class LdaptiveAutoConfigurationPropertiesTest {
   @Test
   void getSearchValidator() {
     LdaptiveAutoConfigurationProperties expected = new LdaptiveAutoConfigurationProperties();
-    expected.getConfig().setSearchValidator(new SearchValidatorProperties());
-    assertNotNull(expected.getConfig().getSearchValidator());
+    expected.getConfig().getConnectionPool().setValidator(new ConnectionValidatorProperties());
+    assertNotNull(expected.getConfig().getConnectionPool().getValidator());
   }
 }

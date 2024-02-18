@@ -31,6 +31,7 @@ import org.bremersee.ldaptive.spring.boot.autoconfigure.app.PersonMapper;
 import org.bremersee.ldaptive.spring.boot.autoconfigure.app.TestConfiguration;
 import org.bremersee.ldaptive.spring.boot.autoconfigure.security.WebSecurityConfiguration;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.ldaptive.LdapEntry;
@@ -183,21 +184,19 @@ class LdaptiveIntegrationTest {
             .equalsIgnoreCase(entry.getCn())));
   }
 
+  @Order(30)
   @Test
   void authenticate(SoftAssertions softly) {
 
-    // no password present: authentication fails
+    // wrong password: authentication fails
     softly
         .assertThatExceptionOfType(BadCredentialsException.class)
         .isThrownBy(() -> authenticationManager
             .authenticate(new UsernamePasswordAuthenticationToken("anna", "secret")));
 
-    // set password
-    String password = ldaptiveTemplate.generateUserPassword("uid=anna,ou=people," + baseDn);
-
     // authenticate successfully
     LdaptiveAuthenticationToken authenticationToken = authenticationManager
-        .authenticate(new UsernamePasswordAuthenticationToken("anna", password));
+        .authenticate(new UsernamePasswordAuthenticationToken("anna", "topsecret"));
 
     softly
         .assertThat(authenticationToken.getName())
@@ -222,13 +221,10 @@ class LdaptiveIntegrationTest {
         .extracting(RestClientResponseException::getStatusCode)
         .isEqualTo(HttpStatus.UNAUTHORIZED);
 
-    // set password
-    String password = ldaptiveTemplate.generateUserPassword("uid=hans,ou=people," + baseDn);
-
     // get again
     String helloResponse = WebClient.builder()
         .baseUrl("http://localhost:" + port)
-        .filter(ExchangeFilterFunctions.basicAuthentication("hans", password))
+        .filter(ExchangeFilterFunctions.basicAuthentication("hans", "topsecret"))
         .build()
         .get()
         .uri("/hello")
