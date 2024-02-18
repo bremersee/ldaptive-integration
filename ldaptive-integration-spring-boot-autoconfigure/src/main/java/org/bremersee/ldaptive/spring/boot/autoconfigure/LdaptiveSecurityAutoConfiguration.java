@@ -21,7 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.bremersee.ldaptive.security.authentication.AccountControlEvaluator;
 import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationManager;
 import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationProperties;
-import org.bremersee.ldaptive.security.authentication.LdaptivePasswordEncoderProvider;
 import org.bremersee.ldaptive.security.authentication.ReactiveLdaptiveAuthenticationManager;
 import org.bremersee.ldaptive.security.authentication.UsernameToBindDnConverter;
 import org.ldaptive.ConnectionConfig;
@@ -91,7 +90,7 @@ public class LdaptiveSecurityAutoConfiguration {
 
     LdaptiveAuthenticationManager manager = new LdaptiveAuthenticationManager(
         connectionConfig, properties);
-    manager.setPasswordEncoder(passwordEncoderProvider.getPasswordEncoder());
+    manager.setPasswordEncoder(passwordEncoderProvider.get());
     usernameToBindDnProvider.ifAvailable(manager::setUsernameToBindDnConverter);
     AccountControlEvaluator accountControlEvaluator = accountControlEvaluatorProvider
         .getIfAvailable(() -> properties.getAccountControlEvaluator().get());

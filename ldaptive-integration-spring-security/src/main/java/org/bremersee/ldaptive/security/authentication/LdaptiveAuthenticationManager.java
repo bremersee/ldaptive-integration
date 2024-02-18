@@ -123,6 +123,15 @@ public class LdaptiveAuthenticationManager
     }
   }
 
+  void init() {
+    if (!bindWithAuthentication() && isNull(passwordEncoder)) {
+      throw new IllegalStateException(String.format("A password attribute is set (%s) but no "
+              + "password encoder is present. Either delete the password attribute to perform a "
+              + "bind to authenticate or set a password encoder.",
+          authenticationProperties.getPasswordAttribute()));
+    }
+  }
+
   /**
    * Changes the password of the user. Extended Operation(1.3.6.1.4.1.4203.1.11.1) must be
    * supported.
@@ -264,17 +273,16 @@ public class LdaptiveAuthenticationManager
       LdapEntry user,
       String password) {
 
-    if (bindWithAuthentication()) {
-      return;
-    }
-    Assert.notNull(passwordEncoder, "No password encoder is present.");
-    boolean matches = ldaptiveTemplate.compare(CompareRequest.builder()
-        .dn(user.getDn())
-        .name(authenticationProperties.getPasswordAttribute())
-        .value(passwordEncoder.encode(password))
-        .build());
-    if (!matches) {
-      throw new BadCredentialsException("Password doesn't match.");
+    if (!bindWithAuthentication()) {
+      Assert.notNull(passwordEncoder, "No password encoder is present.");
+      boolean matches = ldaptiveTemplate.compare(CompareRequest.builder()
+          .dn(user.getDn())
+          .name(authenticationProperties.getPasswordAttribute())
+          .value(passwordEncoder.encode(password))
+          .build());
+      if (!matches) {
+        throw new BadCredentialsException("Password doesn't match.");
+      }
     }
   }
 

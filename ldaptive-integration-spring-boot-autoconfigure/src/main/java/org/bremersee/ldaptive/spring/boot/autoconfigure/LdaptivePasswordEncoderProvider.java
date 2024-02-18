@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package org.bremersee.ldaptive.security.authentication;
+package org.bremersee.ldaptive.spring.boot.autoconfigure;
 
+import java.util.function.Supplier;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.springframework.security.crypto.keygen.KeyGenerators;
@@ -27,14 +28,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  *
  * @author Christian Bremer
  */
-public interface LdaptivePasswordEncoderProvider {
-
-  /**
-   * Gets password encoder.
-   *
-   * @return the password encoder
-   */
-  PasswordEncoder getPasswordEncoder();
+@FunctionalInterface
+public interface LdaptivePasswordEncoderProvider extends Supplier<PasswordEncoder> {
 
   /**
    * Creates a new default provider.
@@ -52,7 +47,7 @@ public interface LdaptivePasswordEncoderProvider {
   class DefaultLdaptivePasswordEncoderProvider implements LdaptivePasswordEncoderProvider {
 
     @Override
-    public PasswordEncoder getPasswordEncoder() {
+    public PasswordEncoder get() {
       //noinspection deprecation
       return new LdapShaPasswordEncoder(KeyGenerators.shared(0));
     }
