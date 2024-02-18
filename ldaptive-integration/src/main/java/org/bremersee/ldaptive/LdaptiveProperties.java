@@ -67,7 +67,8 @@ public class LdaptiveProperties {
   private boolean immutable;
 
   /**
-   * URL to the LDAP(s).
+   * URL of the LDAP server(s) separated by space. For example
+   * {@code ldaps://ldap1.example.org:636 ldaps://ldap2.example.org:636}
    */
   private String ldapUrl = "ldap://localhost:12389";
 
@@ -97,6 +98,9 @@ public class LdaptiveProperties {
    */
   private boolean autoReconnect = true;
 
+  /**
+   * The reconnect strategy.
+   */
   private ReconnectStrategy reconnectStrategy = ReconnectStrategy.ONE_RECONNECT_ATTEMPT;
 
   /**
@@ -104,6 +108,9 @@ public class LdaptiveProperties {
    */
   private boolean autoReplay = true;
 
+  /**
+   * The ssl configuration.
+   */
   private SslProperties sslConfig = new SslProperties();
 
   /**
@@ -126,8 +133,14 @@ public class LdaptiveProperties {
    */
   private boolean fastBind = false;
 
+  /**
+   * The connection strategy.
+   */
   private ConnectionStrategy connectionStrategy = ConnectionStrategy.ACTIVE_PASSIVE;
 
+  /**
+   * The connection validator.
+   */
   private ConnectionValidatorProperties connectionValidator = new ConnectionValidatorProperties();
 
   /**
@@ -135,8 +148,16 @@ public class LdaptiveProperties {
    */
   private boolean pooled = false;
 
+  /**
+   * The connection pool configuration.
+   */
   private ConnectionPoolProperties connectionPool = new ConnectionPoolProperties();
 
+  /**
+   * Creates the connection config.
+   *
+   * @return the connection config
+   */
   public ConnectionConfig createConnectionConfig() {
     ConnectionInitializer[] connectionInitializers;
     if (hasText(getBindDn()) && hasText(getBindCredentials())) {
@@ -174,6 +195,11 @@ public class LdaptiveProperties {
     return connectionConfig;
   }
 
+  /**
+   * Create then connection factory.
+   *
+   * @return the connection factory
+   */
   public ConnectionFactory createConnectionFactory() {
     if (isPooled()) {
       ConnectionPoolProperties properties = getConnectionPool();
@@ -198,9 +224,24 @@ public class LdaptiveProperties {
   }
 
 
+  /**
+   * The reconnection strategy.
+   */
   public enum ReconnectStrategy implements Supplier<Predicate<RetryMetadata>> {
+
+    /**
+     * One reconnect attempt strategy.
+     */
     ONE_RECONNECT_ATTEMPT(ConnectionConfig.ONE_RECONNECT_ATTEMPT),
+
+    /**
+     * Infinite reconnect attempts strategy.
+     */
     INFINITE_RECONNECT_ATTEMPTS(ConnectionConfig.INFINITE_RECONNECT_ATTEMPTS),
+
+    /**
+     * Infinite reconnect attempts with backoff strategy.
+     */
     INFINITE_RECONNECT_ATTEMPTS_WITH_BACKOFF(
         ConnectionConfig.INFINITE_RECONNECT_ATTEMPTS_WITH_BACKOFF);
 
@@ -216,6 +257,9 @@ public class LdaptiveProperties {
     }
   }
 
+  /**
+   * The ssl configuration.
+   */
   @Data
   public static class SslProperties {
 
@@ -234,6 +278,11 @@ public class LdaptiveProperties {
      */
     private String authenticationKey;
 
+    /**
+     * Create ssl config.
+     *
+     * @return the ssl config
+     */
     public SslConfig createSslConfig() {
       if (hasText(getTrustCertificates())
           || hasText(getAuthenticationCertificate())
@@ -257,6 +306,9 @@ public class LdaptiveProperties {
     }
   }
 
+  /**
+   * The connection strategy.
+   */
   public enum ConnectionStrategy implements Supplier<org.ldaptive.ConnectionStrategy> {
 
     /**
@@ -312,12 +364,15 @@ public class LdaptiveProperties {
      */
     private Duration validateTimeout = Duration.ofSeconds(5);
 
+    /**
+     * The search request.
+     */
     private SearchRequestProperties searchRequest = new SearchRequestProperties();
 
     /**
-     * Create search connection validator search connection validator.
+     * Create connection validator.
      *
-     * @return the search connection validator
+     * @return the connection validator
      */
     public ConnectionValidator createConnectionValidator() {
       if (hasText(getSearchRequest().getBaseDn())) {
@@ -336,14 +391,29 @@ public class LdaptiveProperties {
     @NoArgsConstructor
     public static class SearchRequestProperties {
 
+      /**
+       * The base dn (like {@code ou=peoples,dc=example,dc=org}).
+       */
       private String baseDn;
 
+      /**
+       * The search filter.
+       */
       private SearchFilterProperties searchFilter = new SearchFilterProperties();
 
+      /**
+       * The size limit.
+       */
       private Integer sizeLimit;
 
-      private SearchScope searchScope; // = SearchScope.ONELEVEL;
+      /**
+       * The search scope.
+       */
+      private SearchScope searchScope;
 
+      /**
+       * The return attributes.
+       */
       private List<String> returnAttributes = new ArrayList<>();
 
       /**
@@ -387,12 +457,18 @@ public class LdaptiveProperties {
       @NoArgsConstructor
       public static class SearchFilterProperties {
 
+        /**
+         * The search filter (like {@code (&(objectClass=inetOrgPerson)(uid=administrator))}).
+         */
         private String filter;
 
       }
     }
   }
 
+  /**
+   * The connection pool properties.
+   */
   @Data
   public static class ConnectionPoolProperties {
 
@@ -436,6 +512,9 @@ public class LdaptiveProperties {
      */
     private boolean validatePeriodically = false;
 
+    /**
+     * The validator for the connections in the pool.
+     */
     private ConnectionValidatorProperties validator = new ConnectionValidatorProperties();
 
     /**
@@ -450,10 +529,10 @@ public class LdaptiveProperties {
   }
 
   /**
-   * Has text boolean.
+   * Determines whether the given value has text or not.
    *
-   * @param value the value
-   * @return the boolean
+   * @param value the value (can be null)
+   * @return the {@code true}, if the value has text, otherwise {@code false}
    */
   protected static boolean hasText(String value) {
     return Objects.nonNull(value) && !value.isBlank();
