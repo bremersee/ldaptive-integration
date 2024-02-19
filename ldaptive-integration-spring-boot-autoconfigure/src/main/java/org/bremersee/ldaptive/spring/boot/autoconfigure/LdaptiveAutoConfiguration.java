@@ -61,7 +61,7 @@ public class LdaptiveAutoConfiguration {
    * @param ldaptiveProperties the ldaptive properties
    */
   public LdaptiveAutoConfiguration(LdaptiveAutoConfigurationProperties ldaptiveProperties) {
-    this.properties = ldaptiveProperties.getConfig();
+    this.properties = ldaptiveProperties.getConnection();
   }
 
   /**

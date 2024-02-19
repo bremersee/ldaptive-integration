@@ -23,7 +23,12 @@ import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationMana
 import org.bremersee.ldaptive.security.authentication.LdaptiveAuthenticationProperties;
 import org.bremersee.ldaptive.security.authentication.ReactiveLdaptiveAuthenticationManager;
 import org.bremersee.ldaptive.security.authentication.UsernameToBindDnConverter;
+import org.bremersee.ldaptive.security.authentication.templates.Template;
+import org.bremersee.ldaptive.spring.boot.autoconfigure.LdaptiveAutoConfigurationProperties.LdaptiveAuthenticationAutoConfigurationProperties;
 import org.ldaptive.ConnectionConfig;
+import org.mapstruct.Mapper;
+import org.mapstruct.NullValueCheckStrategy;
+import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -53,10 +58,18 @@ public class LdaptiveSecurityAutoConfiguration {
   private final LdaptiveAuthenticationProperties properties;
 
   public LdaptiveSecurityAutoConfiguration(LdaptiveAutoConfigurationProperties properties) {
+    LdaptiveAuthenticationProperties authProps = AuthenticationPropertiesMapper.INSTANCE.map(
+        properties.getAuthentication());
+    Template template;
+    try {
+      template = Template.valueOf(properties.getAuthentication().getTemplate().name());
+    } catch (Exception ignored) {
+      template = null;
+    }
     this.properties = Optional
-        .ofNullable(properties.getAuthentication().getTemplate())
-        .map(t -> t.applyTemplate(properties.getAuthentication().getConfig()))
-        .orElse(properties.getAuthentication().getConfig());
+        .ofNullable(template)
+        .map(t -> t.applyTemplate(authProps))
+        .orElse(authProps);
   }
 
   /**
@@ -111,6 +124,20 @@ public class LdaptiveSecurityAutoConfiguration {
             usernameToBindDnProvider,
             passwordEncoderProvider,
             accountControlEvaluatorProvider));
+  }
+
+  @Mapper(nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS)
+  interface AuthenticationPropertiesMapper {
+
+    /**
+     * The constant INSTANCE.
+     */
+    AuthenticationPropertiesMapper INSTANCE = Mappers
+        .getMapper(AuthenticationPropertiesMapper.class);
+
+    LdaptiveAuthenticationProperties map(
+        LdaptiveAuthenticationAutoConfigurationProperties props);
+
   }
 
 }

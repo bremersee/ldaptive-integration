@@ -31,7 +31,7 @@ class LdaptiveAutoConfigurationTest {
   @Test
   void init() {
     LdaptiveAutoConfigurationProperties properties = new LdaptiveAutoConfigurationProperties();
-    properties.getConfig().setPooled(false);
+    properties.getConnection().setPooled(false);
     LdaptiveAutoConfiguration configuration = new LdaptiveAutoConfiguration(properties);
     assertDoesNotThrow(configuration::init);
   }

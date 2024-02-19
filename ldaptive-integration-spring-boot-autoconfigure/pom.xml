@@ -51,7 +51,6 @@
       <groupId>org.bremersee</groupId>
       <artifactId>ldaptive-integration</artifactId>
       <version>${project.version}</version>
-      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.bremersee</groupId>
